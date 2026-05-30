@@ -1,0 +1,21 @@
+﻿@page "/task4"
+@rendermode InteractiveServer
+
+<h3>Task4</h3>
+
+<button onclick="@changeVisibility">Show/Hide text</button>
+
+@if (visible)
+{
+    <p class="message-task4">
+        Message is visible ...
+    </p>
+}
+
+@code {
+    bool visible = true;
+    void changeVisibility()
+    {
+        visible = !visible;
+    }
+}
