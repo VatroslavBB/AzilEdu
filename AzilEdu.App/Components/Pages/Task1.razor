@@ -1,0 +1,25 @@
+﻿@page "/task1"
+@rendermode InteractiveServer
+
+<h3>task1</h3>
+
+<p class="@currentClass">
+    This is the color changing text!!!
+</p>
+
+<button @onclick="ChangeColor">Change color</button>
+
+@code {
+    string currentClass = "color1";
+    void ChangeColor()
+    {
+        if (currentClass == "color1")
+        {
+            currentClass = "color2";
+        }
+        else
+        {
+            currentClass = "color1";
+        }
+    }
+}
