@@ -1,0 +1,31 @@
+﻿@page "/task6"
+@rendermode InteractiveServer
+
+<h3>Task6</h3>
+
+<label>
+    New task:
+    <input @bind="newTask" @bind:event="oninput"/>
+</label>
+
+<button onclick="@taskAdder">Add new task</button>
+
+<ul>
+    @foreach (string task in tasks)
+    {
+        <li>@task</li>
+    }
+</ul>
+
+@code {
+    string newTask = "";
+    List<string> tasks = new() { };
+    void taskAdder()
+    {
+        if(!string.IsNullOrWhiteSpace(newTask))
+        {
+            tasks.Add(newTask);
+        }
+        newTask = "";
+    }
+}
