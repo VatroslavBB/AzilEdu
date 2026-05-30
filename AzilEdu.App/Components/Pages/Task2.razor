@@ -1,0 +1,22 @@
+﻿@page "/task2"
+@rendermode InteractiveServer
+
+<h3>Task2</h3>
+
+<p>VALUE: @cnt</p>
+
+<button onclick="@IncreaseCnt">Increaser</button>
+
+<button onclick="@DecreaseCnt">Decreaser</button>
+
+@code {
+    int cnt = 0;
+    void IncreaseCnt()
+    {
+        cnt++;
+    }
+    void DecreaseCnt()
+    {
+        cnt--;
+    }
+}
