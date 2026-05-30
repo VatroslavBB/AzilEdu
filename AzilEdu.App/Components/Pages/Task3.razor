@@ -1,0 +1,18 @@
+﻿@page "/task3"
+@rendermode InteractiveServer
+
+<h3>Task3</h3>
+
+<label>
+    Name: 
+    <input @bind="firstName" @bind:event="oninput"/>
+    Surname:
+    <input @bind="lastName" @bind:event="oninput"/>
+</label>
+
+<p>Hello, @firstName @lastName!!</p>
+
+@code {
+    string firstName = "";
+    string lastName = "";
+}
