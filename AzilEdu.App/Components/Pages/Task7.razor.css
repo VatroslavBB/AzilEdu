@@ -1,0 +1,43 @@
+﻿body {
+}
+
+section {
+    display: flex;
+    justify-content: center;
+    margin-top: 40px;
+}
+
+.card {
+    background-color: black;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px white;
+    padding: 24px 32px;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.app-name {
+    font-size: 24px;
+    color: darkslateblue;
+    margin: 0;
+    padding: 4px 10px;
+    border-radius: 5px;
+    background-color: mediumorchid;
+}
+
+.app-message {
+    color: rebeccapurple;
+    margin: 0;
+}
+
+.app-status {
+    font-size: 12px;
+    font-weight: bold;
+    color: black;
+    background-color: mediumslateblue;
+    padding: 4px 10px;
+    border-radius: 20px;
+    align-self: flex-start;
+}
