@@ -1,0 +1,22 @@
+﻿@page "/task5"
+
+<h3>Task5</h3>
+
+<ul>
+    @foreach (string movie in movies)
+    {
+        <li>@movie</li>
+    }
+</ul>
+
+@code {
+    List<string> movies = new()
+    {
+        "Star Wars: The Empire Strikes Back",
+        "Primal Fear",
+        "One Flew Over the Cuckoo's Nest",
+        "The Usual Suspects",
+        "Batman: The Dark Knight Rises"
+    };
+
+}
