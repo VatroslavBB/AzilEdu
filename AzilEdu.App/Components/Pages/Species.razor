@@ -2,32 +2,139 @@
 
 <MudText Typo="Typo.h4" GutterBottom="true">Species</MudText>
 
-<MudTable Items="_species">
-    <HeaderContent>
-        <MudTh>Id</MudTh>
-        <MudTh>Name</MudTh>
-        <MudTh>Description</MudTh>
-    </HeaderContent>
+<MudText Typo="Typo.body2">
+    Na ovoj stranici možete pregledati koje sve vrste životinja imamo u azilu
+</MudText>
 
-    <RowTemplate>
-        <MudTd>@context.Id</MudTd>
-        <MudTd>@context.Name</MudTd>
-        <MudTd>@context.Description</MudTd>
-    </RowTemplate>
-</MudTable>
+<MudPaper Class="pa-4" Elevation="2">
+     <MudGrid>
+         @foreach (var card in _cards)
+        {
+            <MudItem xs="12" md="4" Class="d-flex">
+                <MudPaper Class="pa-4 d-flex flex-column" Outlined="true" Style="width:100%">
+                    <MudImage Src="@card.Img"
+                              Alt="@card.Name"
+                              Fluid="true"
+                              Class="mb-3" />
+                    <MudText Typo="Typo.h6" Class="mt-3">@card.Name</MudText>
+                    <MudText Typo="Typo.caption" Style="font-style:italic; color:gray">
+                        @card.LatinName
+                    </MudText>
+
+                    <MudText Typo="Typo.body2" Class="flex-grow-1 mb-2">
+                        @card.Description
+                    </MudText>
+
+                    <MudText Typo="Typo.body2">
+                        <b>Životni vijek:</b> 
+                        @card.LifeSpan
+                    </MudText>
+                    <MudText Typo="Typo.body2">
+                        <b>Prehrana:</b>
+                        @card.Diet
+                    </MudText>
+                    <MudText Typo="Typo.caption" Class="mb-1">
+                        <b>Vrste u azilu:</b>
+                    </MudText>
+                    <MudGrid xs="12" md="4" Class="d-flex">
+                        @foreach (var animal in card.InHolding)
+                        {
+                            <MudItem xs="12" md="4" Class="d-flex">
+                                <MudPaper Class="pa-4 d-flex flex-column" Outlined="true" Style="width:100%">
+                                    <MudText>
+                                        @animal
+                                    </MudText>
+                                </MudPaper>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                    <MudButton Variants="Variant.Filled"
+                               Color="Color.Primary"
+                               Class="mt-3">
+                        @card.ButtonText
+                    </MudButton>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+</MudPaper>
+
 
 @code {
-    private List<SpeciesItem> _species = new()
-  {
-      new SpeciesItem { Id = 1, Name = "Dog", Description = "Domaći pas" },
-      new SpeciesItem { Id = 2, Name = "Cat", Description = "Domaća mačka" },
-      new SpeciesItem { Id = 3, Name = "Rabbit", Description = "Kunić" }
-  };
-
-    private class SpeciesItem
+    private List<Card> _cards = new()
     {
-        public int Id { get; set; }
+        new Card {
+            Img = "images/bunny2Img.jpg", 
+            Name = "Zec/kunić",
+            LatinName = "Oryctolagus cuniculus",
+            Description = "Umiljata i plaha životinja, voli jesti mrkvu i ostala korjenasta povrća",
+            LifeSpan = "8-12 godina",
+            Diet = "korjenasto povrće",
+            Population = "4",
+            InHolding = new () {"Veliki bjeloopaljeni kunić", "Bečki bijeli kunić"}
+        },
+        new Card {
+            Img = "images/catImage.jpg",
+            Name = "Mačka",
+            LatinName = "Felis catus",
+            Description = "Nije previše privržena životinja, ali se voli maziti",
+            LifeSpan = "10-20 godina",
+            Diet = "mačja hrana, meso, riba",
+            Population = "12",
+            InHolding = new () {"Ulična mačka"}
+        },
+        new Card {
+            Img = "images/dogImage.jpg",
+            Name = "Pas",
+            LatinName = "Canis Lupus",
+            Description = "Čovjekov najbolji prijatelj, vesela i odana narav",
+            LifeSpan = "10-15 godina",
+            Diet = "pseća hrana, meso, riba, voće",
+            Population = "18",
+            InHolding = new () {"Njemački ovčar", "Rotvajler", "Šnaucer", "Zlatni retriver", "Bigl", "Jazavčar", "Pomeranac"}
+        },
+        new Card {
+            Img = "images/ferretImage.jpg",
+            Name = "Lasica",
+            LatinName = "Mustela nivalis",
+            Description = "Brza i okretna životinja",
+            LifeSpan = "7-10 godina",
+            Diet = "miševi, hrana za lasice",
+            Population = "1",
+            InHolding = new () {"Afrički tvor"}
+        },
+        new Card {
+            Img = "images/hamsterImage.jpg",
+            Name = "Hrčak",
+            LatinName = "Cricetinae",
+            Description = "Nokturna i aktivna životinja, voli kopati tunele i trčati u kotaču",
+            LifeSpan = "1.5-3 godina",
+            Diet = "sjemenke, povrće, voće",
+            Population = "5",
+            InHolding = new () {"Sirijski hrčak", "Ruski hrčak", "Kineski hrčak"}
+        },
+        new Card {
+            Img = "images/parrotImage.jpg",
+            Name = "Ptica",
+            LatinName = "Aves",
+            Description = "Držati u krletci, inteligentije vrste znaju i jednostavne riječi",
+            LifeSpan = "2-70 godina",
+            Diet = "sjemenke, voće, neke jedu i miševe",
+            Population = "2",
+            InHolding = new () {"Papiga", "Kanarinac"}
+        }
+    };
+
+    private class Card
+    {
+        public string Img { get; set; } = "";
         public string Name { get; set; } = "";
+        public string LatinName { get; set; } = "";
         public string Description { get; set; } = "";
+        public string LifeSpan { get; set; } = "";
+        public string Diet { get; set; } = "";
+        public string Population { get; set; } = "0";
+        public List<string> InHolding { get; set; } = new() {};
+        public string ButtonText { get; set; } = "View Details";
     }
 }
