@@ -1,0 +1,33 @@
+﻿@page "/species"
+
+<MudText Typo="Typo.h4" GutterBottom="true">Species</MudText>
+
+<MudTable Items="_species">
+    <HeaderContent>
+        <MudTh>Id</MudTh>
+        <MudTh>Name</MudTh>
+        <MudTh>Description</MudTh>
+    </HeaderContent>
+
+    <RowTemplate>
+        <MudTd>@context.Id</MudTd>
+        <MudTd>@context.Name</MudTd>
+        <MudTd>@context.Description</MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    private List<SpeciesItem> _species = new()
+  {
+      new SpeciesItem { Id = 1, Name = "Dog", Description = "Domaći pas" },
+      new SpeciesItem { Id = 2, Name = "Cat", Description = "Domaća mačka" },
+      new SpeciesItem { Id = 3, Name = "Rabbit", Description = "Kunić" }
+  };
+
+    private class SpeciesItem
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+    }
+}
