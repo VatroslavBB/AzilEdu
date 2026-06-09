@@ -15,7 +15,8 @@
                     <MudImage Src="@card.Img"
                               Alt="@card.Name"
                               Fluid="true"
-                              Class="mb-3" />
+                              Class="mb-3" 
+                              Style="width:100px; height:100px; border-radius:6px;"/>
                     <MudText Typo="Typo.h6" Class="mt-3">@card.Name</MudText>
                     <MudText Typo="Typo.caption" Style="font-style:italic; color:gray">
                         @card.LatinName
@@ -33,6 +34,10 @@
                         <b>Prehrana:</b>
                         @card.Diet
                     </MudText>
+                    <MudText Typo="Typo.body2">
+                        <b>Broj jedinki:</b>
+                        @card.Population
+                    </MudText>
                     <MudText Typo="Typo.caption" Class="mb-1">
                         <b>Vrste u azilu:</b>
                     </MudText>
@@ -48,7 +53,7 @@
                             </MudItem>
                         }
                     </MudGrid>
-                    <MudButton Variants="Variant.Filled"
+                    <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
                                Class="mt-3">
                         @card.ButtonText
