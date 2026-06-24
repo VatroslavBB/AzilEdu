@@ -11,5 +11,6 @@ namespace AzilEdu.Api.Data
         }
 
         public DbSet<Animal> Animals => Set<Animal>();
+        public DbSet<HousingUnit> HousingUnits => Set<HousingUnit>();
     }
 }
