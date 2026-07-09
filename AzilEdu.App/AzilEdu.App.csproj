@@ -15,4 +15,8 @@
     <ProjectReference Include="..\AzilEdu.Shared\AzilEdu.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\images\animals\" />
+  </ItemGroup>
+
 </Project>
