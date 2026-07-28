@@ -1,13 +1,13 @@
 ﻿@page "/animals"
 @rendermode InteractiveServer
-@using AzilEdu.Shared.Models
+@using AzilEdu.Shared.DTOs
 @using System.Net.Http.Json
 @inject HttpClient Http
 
 <MudText Typo="Typo.h4" GutterBottom="true">Životinje</MudText>
 <MudText Typo="Typo.body1" Class="mb-4">
-    Prikazujemo probne podatke o životinjama u azilu. Podaci se još ne čitaju iz baze,
-    nego iz lokalne liste u ovoj Razor komponenti.
+    Prikazujemo podatke o životinjama u azilu. Podaci se dohvaćaju iz baze
+    preko API endpointa <code>GET /api/animals</code>.
 </MudText>
 
 <MudGrid Class="mb-4">
@@ -36,6 +36,10 @@
     <MudButton OnClick="@ShowAnimalsInShelter">U azilu</MudButton>
     <MudButton OnClick="@ShowAdoptedAnimals">Udomljene</MudButton>
 </MudButtonGroup>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/animals/create" Class="mb-4">
+    Nova životinja
+</MudButton>
 
 <MudTable Items="@FilteredAnimals" Hover="true" Striped="true" Bordered="true" Dense="true">
     <HeaderContent>
@@ -71,14 +75,14 @@
 </MudTable>
 
 @code {
+    private List<AnimalDto> animals = new();
     protected override async Task OnInitializedAsync()
     {
-        List<Animal>? result = await Http.GetFromJsonAsync<List<Animal>>("api/animals");
-        animals = result ?? new List<Animal>();
+        List<AnimalDto>? result = await Http.GetFromJsonAsync<List<AnimalDto>>("api/animals");
+        animals = result ?? new List<AnimalDto>();
     }
     private string selectedStatus = "Sve";
 
-    private List<Animal> animals = new();
 
     private int TotalAnimals => animals.Count;
 
@@ -86,7 +90,7 @@
 
     private int AdoptedAnimals => animals.Count(animal => animal.IsAdopted);
 
-    private IEnumerable<Animal> FilteredAnimals =>
+    private IEnumerable<AnimalDto> FilteredAnimals =>
         selectedStatus switch
         {
             "U azilu" => animals.Where(animal => !animal.IsAdopted),
@@ -109,7 +113,7 @@
         selectedStatus = "Udomljene";
     }
 
-    private string GetAgeText(Animal animal)
+    private string GetAgeText(AnimalDto animal)
     {
         if (animal.Age.HasValue)
         {
@@ -119,7 +123,7 @@
         return "Nepoznato";
     }
 
-    private string GetArrivalDateText(Animal animal)
+    private string GetArrivalDateText(AnimalDto animal)
     {
         if (animal.ArrivalDate.HasValue)
         {
@@ -129,7 +133,7 @@
         return "Nepoznato";
     }
 
-    private string GetAdoptionStatusText(Animal animal)
+    private string GetAdoptionStatusText(AnimalDto animal)
     {
         if (animal.IsAdopted)
         {
