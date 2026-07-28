@@ -1,0 +1,88 @@
+﻿@page "/housingUnits/create"
+@rendermode InteractiveServer
+@using AzilEdu.Shared.DTOs
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<MudText Typo="Typo.h4" GutterBottom="true">
+    Nova smještajna jedinica
+</MudText>
+
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <MudAlert Severity="Severity.Info" Class="mb-4">
+        @statusMessage
+    </MudAlert>
+}
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">
+        @errorMessage
+    </MudAlert>
+}
+
+<MudStack Spacing="2">
+    <MudTextField @bind-Value="model.Name" Label="Ime" Required="true" Immediate="true" />
+    <MudTextField @bind-Value="model.UnitType" Label="Vrsta smještaja" Required="true" Immediate="true" />
+    <MudNumericField @bind-Value="model.Capacity" Label="Kapacitet" Immediate="true" />
+    <MudNumericField @bind-Value="model.Occupied" Label="Zauzeto" Immediate="true" />
+    <MudDatePicker @bind-Date="lastCleanedAt" Label="Zadnje čišćeno" />
+    <MudCheckBox @bind-Value="model.IsActive" Label="Aktivno" />
+    <MudTextField @bind-Value="model.ImageUrl" Label="Url slike" Immediate="true" />
+    <MudTextField @bind-Value="model.Note" Label="Dodatno" Immediate="true" />
+
+    <MudButton ButtonType="ButtonType.Button"
+               OnClick="SaveHousingUnit"
+               Variant="Variant.Filled"
+               Color="Color.Primary">
+    Spremi
+    </MudButton>
+</MudStack>
+
+@code {
+    private string? statusMessage;
+    private string? errorMessage;
+    private int saveClickCount;
+
+    private SaveHousingUnitDto model = new()
+        {
+            LastCleanedAt = DateTime.Today,
+            ImageUrl = "images/housingUnits/placeholder.webp"
+        };
+
+    private DateTime? lastCleanedAt = DateTime.Today;
+
+    private async Task SaveHousingUnit()
+    {
+        try
+        {
+            saveClickCount++;
+            statusMessage = $"Klik na spremanje je primljen ({saveClickCount}).";
+            errorMessage = null;
+
+            if(string.IsNullOrEmpty(model.Name) || string.IsNullOrWhiteSpace(model.UnitType))
+            {
+                errorMessage = "Upiši obavezna polja: ime i tip jedinice";
+                return;
+            }
+
+            model.LastCleanedAt = lastCleanedAt;
+
+            var response = await Http.PostAsJsonAsync("api/housingUnits", model);
+
+            if(response.IsSuccessStatusCode)
+            {
+                Navigation.NavigateTo("/housing-units");
+                return;
+            }
+
+            errorMessage = $"Spremanje nije uspjelo. Status: {(int)response.StatusCode}";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Greška kod spremanja: {ex.Message}";
+        }
+    }
+}

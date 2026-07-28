@@ -1,0 +1,83 @@
+﻿@page "/housingUnits/edit/{Id:int}"
+@rendermode InteractiveServer
+@using AzilEdu.Shared.DTOs
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<MudText Typo="Typo.h4" GutterBottom="true">
+    Uredi smještajnu jedinicu
+</MudText>
+
+<MudForm @ref="form">
+    <MudStack Spacing="2">
+        <MudTextField @bind-Value="model.Name" Label="Ime" Required="true" />
+        <MudTextField @bind-Value="model.UnitType" Label="Tip smještaja" Required="true" />
+        <MudNumericField @bind-Value="model.Capacity" Label="Kapacitet" />
+        <MudNumericField @bind-Value="model.Occupied" Label="Zauzeto" />
+        <MudDatePicker @bind-Date="lastCleanedAt" Label="Zadnje čišćenje" />
+        <MudCheckBox @bind-Value="model.IsActive" Label="Aktivno" />
+        <MudTextField @bind-Value="model.ImageUrl" Label="Url Slike" />
+        <MudTextField @bind-Value="model.Note" Label="Dodatno" Lines="3" />
+
+        <MudButton ButtonType="ButtonType.Button"
+                   OnClick="@UpdateHousingUnit"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary">
+            Spremi promjene
+        </MudButton>
+    </MudStack>
+</MudForm>
+
+@code 
+{
+    [Parameter] public int Id { get; set; }
+
+    private MudForm? form;
+    private SaveHousingUnitDto model = new();
+    private DateTime? lastCleanedAt;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var housingUnit = await Http.GetFromJsonAsync<HousingUnitDto>($"api/housingUnits/{Id}");
+
+        if (housingUnit is not null)
+        {
+            model = new SaveHousingUnitDto
+                {
+                    Name = housingUnit.Name,
+                    UnitType = housingUnit.UnitType,
+                    Capacity = housingUnit.Capacity,
+                    Occupied = housingUnit.Occupied,
+                    LastCleanedAt = housingUnit.LastCleanedAt,
+                    IsActive = housingUnit.IsActive,
+                    ImageUrl = housingUnit.ImageUrl,
+                    Note = housingUnit.Note
+                };
+
+            lastCleanedAt = housingUnit.LastCleanedAt;
+        }
+    }
+
+    private async Task UpdateHousingUnit()
+    {
+        if (form is not null)
+        {
+            await form.ValidateAsync();
+
+            if(!form.IsValid)
+            {
+                return;
+            }
+        }
+
+        model.LastCleanedAt = lastCleanedAt;
+
+        var response = await Http.PutAsJsonAsync($"api/housingUnits/{Id}", model);
+
+        if(response.IsSuccessStatusCode)
+        {
+            Navigation.NavigateTo("/housing-units");
+        }
+    }
+}
