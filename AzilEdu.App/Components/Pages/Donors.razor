@@ -9,19 +9,34 @@
     Donatori dolaze iz baze preko API projekta. Tip i status čitaju se iz povezanih lookup tablica.
 </MudText>
 
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">
+        @errorMessage
+    </MudAlert>
+}
+
+<MudButton Href="/donors/create"
+           Variant="Variant.Filled"
+           Color="Color.Primary"
+           StartIcon="@Icons.Material.Filled.Add"
+           Class="mb-4">
+    Novi donator
+</MudButton>
+
 <MudPaper Class="pa-4 mb-4">
     <MudGrid>
-        <MudItem xs="12" md="5">
+        <MudItem xs="12" md="4">
             <MudTextField @bind-Value="searchString"
                           Label="Pretraži donatore"
-                          Placeholder="Ime, prezime, organizacija ili grad"
+                          Placeholder="Ime, prezime, organizacija, email ili grad"
                           Variant="Variant.Outlined"
                           Immediate="true"
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search" />
         </MudItem>
 
-        <MudItem xs="12" md="4">
+        <MudItem xs="12" md="3">
             <MudSelect T="string"
                        Label="Status"
                        @bind-Value="selectedStatus"
@@ -34,7 +49,20 @@
             </MudSelect>
         </MudItem>
 
-        <MudItem xs="12" md="3" Class="d-flex align-center">
+        <MudItem xs="12" md="3">
+            <MudSelect T="int?"
+                       Label="Tip"
+                       @bind-Value="selectedTypeId"
+                       Variant="Variant.Outlined"
+                       Clearable="true">
+                @foreach (var type in typeList)
+                {
+                    <MudSelectItem T="int?" Value="@((int?)type.Id)">@type.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="12" md="2" Class="d-flex align-center">
             <MudButton Variant="Variant.Outlined"
                        Color="Color.Secondary"
                        StartIcon="@Icons.Material.Filled.Refresh"
@@ -45,6 +73,14 @@
     </MudGrid>
 </MudPaper>
 
+@if (isLoading)
+{
+    <div class="d-flex justify-center my-6">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </div>
+}
+else
+{
 <MudTable Items="@donors" Filter="FilterDonors" Hover="true" Striped="true" Bordered="true" Dense="true">
     <HeaderContent>
         <MudTh><MudTableSortLabel SortBy="new Func<DonorDto, object>(x => x.LastName)">Prezime</MudTableSortLabel></MudTh>
@@ -54,6 +90,7 @@
         <MudTh>Grad</MudTh>
         <MudTh><MudTableSortLabel SortBy="new Func<DonorDto, object>(x => x.Type)">Tip</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortBy="new Func<DonorDto, object>(x => x.Status)">Status</MudTableSortLabel></MudTh>
+        <MudTh>Akcije</MudTh>
     </HeaderContent>
     <RowTemplate>
         <MudTd DataLabel="Prezime">@context.LastName</MudTd>
@@ -69,6 +106,13 @@
                 @context.Status
             </MudChip>
         </MudTd>
+        <MudTd DataLabel="Akcije">
+            <MudButton Variant="Variant.Text"
+                       Color="Color.Primary"
+                       Href="@($"/donors/edit/{context.Id}")">
+                Uredi
+            </MudButton>
+        </MudTd>
     </RowTemplate>
     <NoRecordsContent>
         <MudText Typo="Typo.body1" Class="pa-4">
@@ -76,24 +120,43 @@
         </MudText>
     </NoRecordsContent>
 </MudTable>
+}
 
 @code {
     private List<DonorDto> donors = new();
     private List<LookupDto> statusList = new();
+    private List<LookupDto> typeList = new();
 
     private string searchString = string.Empty;
     private string? selectedStatus;
+    private int? selectedTypeId;
+
+    private bool isLoading = true;
+    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        donors = await Http.GetFromJsonAsync<List<DonorDto>>("api/donors") ?? new();
-        statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/donorstatuses") ?? new();
+        try
+        {
+            donors = await Http.GetFromJsonAsync<List<DonorDto>>("api/donors") ?? new();
+            statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/donorstatuses") ?? new();
+            typeList = await Http.GetFromJsonAsync<List<LookupDto>>("api/donortypes") ?? new();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Greška kod dohvaćanja donatora: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private void ResetFilters()
     {
         searchString = string.Empty;
         selectedStatus = null;
+        selectedTypeId = null;
     }
 
     private bool FilterDonors(DonorDto donor)
@@ -106,6 +169,7 @@
                 (!string.IsNullOrWhiteSpace(donor.FirstName) && donor.FirstName.ToLower().Contains(term)) ||
                 (!string.IsNullOrWhiteSpace(donor.LastName) && donor.LastName.ToLower().Contains(term)) ||
                 (!string.IsNullOrWhiteSpace(donor.OrganizationName) && donor.OrganizationName.ToLower().Contains(term)) ||
+                (!string.IsNullOrWhiteSpace(donor.Email) && donor.Email.ToLower().Contains(term)) ||
                 (!string.IsNullOrWhiteSpace(donor.City) && donor.City.ToLower().Contains(term));
 
             if (!matchesSearch)
@@ -114,6 +178,11 @@
 
         if (!string.IsNullOrWhiteSpace(selectedStatus) &&
             !string.Equals(donor.Status, selectedStatus, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (selectedTypeId.HasValue && donor.DonorTypeId != selectedTypeId.Value)
         {
             return false;
         }

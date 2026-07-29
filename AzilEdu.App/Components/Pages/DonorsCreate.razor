@@ -1,0 +1,160 @@
+@page "/donors/create"
+@rendermode InteractiveServer
+
+@using AzilEdu.Shared.DTOs
+@using System.Net.Http.Json
+
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h4" Class="mb-4">Novi donator</MudText>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">
+        @errorMessage
+    </MudAlert>
+}
+
+@if (isLoading)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <EditForm Model="model" OnValidSubmit="SaveDonor" FormName="donor-create">
+        <DataAnnotationsValidator />
+
+        <MudPaper Class="pa-4">
+            <MudSelect T="int" Label="Tip donatora"
+                       @bind-Value="model.DonorTypeId"
+                       For="@(() => model.DonorTypeId)"
+                       Required="true"
+                       Class="mb-3">
+                @foreach (var type in types)
+                {
+                    <MudSelectItem T="int" Value="@type.Id">@type.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="int" Label="Status"
+                       @bind-Value="model.DonorStatusId"
+                       For="@(() => model.DonorStatusId)"
+                       Required="true"
+                       Class="mb-3">
+                @foreach (var status in statuses)
+                {
+                    <MudSelectItem T="int" Value="@status.Id">@status.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudTextField Label="Ime"
+                          @bind-Value="model.FirstName"
+                          For="@(() => model.FirstName)"
+                          Class="mb-3" />
+
+            <MudTextField Label="Prezime"
+                          @bind-Value="model.LastName"
+                          For="@(() => model.LastName)"
+                          Class="mb-3" />
+
+            <MudTextField Label="Naziv organizacije"
+                          @bind-Value="model.OrganizationName"
+                          For="@(() => model.OrganizationName)"
+                          HelperText="Ispuni za tvrtku ili udrugu, umjesto imena i prezimena."
+                          Class="mb-3" />
+
+            <MudTextField Label="Email"
+                          @bind-Value="model.Email"
+                          For="@(() => model.Email)"
+                          Class="mb-3" />
+
+            <MudTextField Label="Telefon"
+                          @bind-Value="model.Phone"
+                          For="@(() => model.Phone)"
+                          Class="mb-3" />
+
+            <MudTextField Label="Adresa"
+                          @bind-Value="model.Address"
+                          For="@(() => model.Address)"
+                          Class="mb-3" />
+
+            <MudTextField Label="Grad"
+                          @bind-Value="model.City"
+                          For="@(() => model.City)"
+                          Class="mb-3" />
+
+            <MudDatePicker Label="Datum unosa"
+                           @bind-Date="model.CreatedAt"
+                           For="@(() => model.CreatedAt)"
+                           Clearable="true"
+                           Class="mb-3" />
+
+            <MudTextField Label="Napomena"
+                          @bind-Value="model.Notes"
+                          For="@(() => model.Notes)"
+                          Lines="3"
+                          Class="mb-4" />
+
+            <MudButton ButtonType="ButtonType.Submit"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary">
+                Spremi
+            </MudButton>
+
+            <MudButton Href="/donors"
+                       Variant="Variant.Text"
+                       Class="ml-2">
+                Odustani
+            </MudButton>
+        </MudPaper>
+    </EditForm>
+}
+
+@code {
+    private SaveDonorDto model = new() { CreatedAt = DateTime.Today };
+
+    private List<LookupDto> types = new();
+    private List<LookupDto> statuses = new();
+
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            types = await Http.GetFromJsonAsync<List<LookupDto>>("api/donortypes") ?? new();
+            statuses = await Http.GetFromJsonAsync<List<LookupDto>>("api/donorstatuses") ?? new();
+
+            model.DonorTypeId = types.FirstOrDefault()?.Id ?? 0;
+            model.DonorStatusId = statuses.FirstOrDefault()?.Id ?? 0;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Greška kod učitavanja forme: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SaveDonor()
+    {
+        errorMessage = null;
+
+        var response = await Http.PostAsJsonAsync("api/donors", model);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            errorMessage = "Donator nije spremljen.";
+            return;
+        }
+
+        Snackbar.Add("Donator je spremljen.", Severity.Success);
+
+        Navigation.NavigateTo("/donors");
+    }
+}
