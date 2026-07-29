@@ -6,6 +6,7 @@
 @using MudBlazor
 
 @inject HttpClient Http
+@inject IDialogService DialogService
 
 <MudText Typo="Typo.h4" Class="mb-4">Volonterski zadaci</MudText>
 
@@ -173,7 +174,7 @@ else
 
                 <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                Color="Color.Error"
-                               OnClick="@(() => DeleteTask(context.Id))" />
+                               OnClick="@(() => DeleteTask(context))" />
             </MudTd>
         </RowTemplate>
 
@@ -299,11 +300,22 @@ else
         await LoadTasks();
     }
 
-    private async Task DeleteTask(int id)
+    private async Task DeleteTask(VolunteerTaskDto task)
     {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            title: "Brisanje zadatka",
+            message: $"Zadatak \"{task.Title}\" bit će trajno obrisan. Želiš li nastaviti?",
+            yesText: "Obriši",
+            cancelText: "Odustani");
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
         try
         {
-            var response = await Http.DeleteAsync($"api/volunteertasks/{id}");
+            var response = await Http.DeleteAsync($"api/volunteertasks/{task.Id}");
 
             if (!response.IsSuccessStatusCode)
             {
