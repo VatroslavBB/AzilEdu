@@ -32,6 +32,18 @@
                           Immediate="true" />
         </MudItem>
 
+        <MudItem xs="12" md="3">
+            <MudDatePicker Label="Rok od"
+                           @bind-Date="dateFrom"
+                           Clearable="true" />
+        </MudItem>
+
+        <MudItem xs="12" md="3">
+            <MudDatePicker Label="Rok do"
+                           @bind-Date="dateTo"
+                           Clearable="true" />
+        </MudItem> 
+
         <MudItem>
             <MudSelect T="int?" Label="Tip"
                 @bind-Value="selectedTypeId"
@@ -172,6 +184,8 @@ else
     private int? selectedVolunteerId;
     private int? selectedAnimalId;
     private int? selectedTypeId;
+    private DateTime? dateTo;
+    private DateTime? dateFrom;
 
     private bool isLoading = true;
     private string? errorMessage;
@@ -209,6 +223,16 @@ else
             errorMessage = null;
 
             var query = new List<string>();
+
+            if (dateFrom.HasValue)
+            {
+                query.Add($"dateFrom={dateFrom.Value:yyyy-MM-dd}");
+            }
+
+            if (dateTo.HasValue)
+            {
+                query.Add($"dateTo={dateTo.Value:yyyy-MM-dd}");
+            }
 
             if (selectedTypeId.HasValue)
             {
@@ -248,6 +272,8 @@ else
         selectedVolunteerId = null;
         selectedAnimalId = null;
         selectedTypeId = null;
+        dateFrom = null;
+        dateTo = null;
 
         await LoadTasks();
     }

@@ -22,7 +22,9 @@ public class VolunteerTasksController : ControllerBase
         [FromQuery] int? statusId,
         [FromQuery] int? volunteerId,
         [FromQuery] int? animalId,
-        [FromQuery] int? typeId)
+        [FromQuery] int? typeId,
+        [FromQuery] DateTime? dateFrom,
+        [FromQuery] DateTime? dateTo)
     {
         var query = _context.VolunteerTasks
             .Include(task => task.Volunteer)
@@ -30,6 +32,17 @@ public class VolunteerTasksController : ControllerBase
             .Include(task => task.VolunteerTaskStatus)
             .Include(task => task.VolunteerTaskType)
             .AsQueryable();
+
+        if(dateFrom.HasValue)
+        {
+            query = query.Where(task => task.DueDate >= dateFrom.Value.Date);
+        }
+
+        if (dateTo.HasValue)
+        {
+            // dodan jos jedan dan za dateTo zato sto zelimo ubrajati cijeli taj dan u filter
+            query = query.Where(task => task.DueDate < dateTo.Value.Date.AddDays(1));
+        }
 
         if (statusId.HasValue)
         {
