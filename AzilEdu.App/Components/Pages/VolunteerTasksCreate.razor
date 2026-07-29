@@ -6,6 +6,7 @@
 
 @inject HttpClient Http
 @inject NavigationManager Navigation
+@inject ISnackbar Snackbar
 
 <MudText Typo="Typo.h4" Class="mb-4">Novi volonterski zadatak</MudText>
 
@@ -152,6 +153,8 @@ else
             errorMessage = "Zadatak nije spremljen.";
             return;
         }
+
+        Snackbar.Add($"Zadatak \"{model.Title}\" je spremljen.", Severity.Success);
 
         Navigation.NavigateTo("/volunteer-tasks");
     }
