@@ -57,6 +57,19 @@
             </MudSelect>
         </MudItem>
 
+        <MudItem>
+            <MudSelect T="bool?" Label="Istekao rok"
+                       @bind-Value="selectedExpired"
+                        Clearable="true">
+                <MudSelectItem T="bool?" Value="@((bool?)true)">
+                    Da
+                </MudSelectItem>
+                <MudSelectItem T="bool?" Value="@((bool?)false)">
+                    Ne
+                </MudSelectItem>
+            </MudSelect>
+        </MudItem>
+
         <MudItem xs="12" md="3">
             <MudSelect T="int?" Label="Status"
                        @bind-Value="selectedStatusId"
@@ -186,6 +199,7 @@ else
     private int? selectedTypeId;
     private DateTime? dateTo;
     private DateTime? dateFrom;
+    private bool? selectedExpired;
 
     private bool isLoading = true;
     private string? errorMessage;
@@ -223,6 +237,12 @@ else
             errorMessage = null;
 
             var query = new List<string>();
+
+            if (selectedExpired.HasValue)
+            {
+
+                query.Add($"Expired={selectedExpired.Value.ToString().ToLower()}");
+            }
 
             if (dateFrom.HasValue)
             {
@@ -274,6 +294,7 @@ else
         selectedTypeId = null;
         dateFrom = null;
         dateTo = null;
+        selectedExpired = null;
 
         await LoadTasks();
     }

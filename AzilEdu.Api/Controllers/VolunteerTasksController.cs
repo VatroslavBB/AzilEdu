@@ -24,7 +24,8 @@ public class VolunteerTasksController : ControllerBase
         [FromQuery] int? animalId,
         [FromQuery] int? typeId,
         [FromQuery] DateTime? dateFrom,
-        [FromQuery] DateTime? dateTo)
+        [FromQuery] DateTime? dateTo,
+        [FromQuery] bool? Expired)
     {
         var query = _context.VolunteerTasks
             .Include(task => task.Volunteer)
@@ -32,6 +33,13 @@ public class VolunteerTasksController : ControllerBase
             .Include(task => task.VolunteerTaskStatus)
             .Include(task => task.VolunteerTaskType)
             .AsQueryable();
+
+        if (Expired.HasValue && Expired == true)
+        {
+            query = query.Where(task => (task.DueDate < DateTime.Today)
+                                        && (task.CompletedAt == null)
+                                        && (task.DueDate != null));
+        }
 
         if(dateFrom.HasValue)
         {
