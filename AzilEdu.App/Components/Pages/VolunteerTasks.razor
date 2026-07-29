@@ -166,7 +166,23 @@ else
                     : context.AnimalName)
             </MudTd>
             <MudTd DataLabel="Rok">
-                @(context.DueDate?.ToString("dd.MM.yyyy.") ?? "-")
+                @if (context.DueDate is null)
+                {
+                    <text>-</text>
+                }
+                else if (IsOverdue(context))
+                {
+                    <MudChip T="string"
+                             Color="Color.Error"
+                             Size="Size.Small"
+                             Icon="@Icons.Material.Filled.Warning">
+                        @context.DueDate.Value.ToString("dd.MM.yyyy.") - rok prošao
+                    </MudChip>
+                }
+                else
+                {
+                    @context.DueDate.Value.ToString("dd.MM.yyyy.")
+                }
             </MudTd>
             <MudTd DataLabel="Akcije">
                 <MudIconButton Icon="@Icons.Material.Filled.Edit"
@@ -345,6 +361,13 @@ else
             || task.Status.Contains(searchString, StringComparison.OrdinalIgnoreCase)
             || task.VolunteerName.Contains(searchString, StringComparison.OrdinalIgnoreCase)
             || task.AnimalName.Contains(searchString, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsOverdue(VolunteerTaskDto task)
+    {
+        return task.DueDate.HasValue
+            && task.DueDate.Value.Date < DateTime.Today
+            && task.CompletedAt is null;
     }
 
     private static Color GetStatusColor(string status)

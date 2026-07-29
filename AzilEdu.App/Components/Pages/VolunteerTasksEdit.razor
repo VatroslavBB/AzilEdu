@@ -42,14 +42,13 @@ else
 
             <MudDatePicker Label="Rok"
                            @bind-Date="model.DueDate"
-                           Class="mb-3" />
-
-            <MudDatePicker Label="Završeno"
-                           @bind-Date="model.CompletedAt"
+                           For="@(() => model.DueDate)"
+                           Clearable="true"
                            Class="mb-3" />
 
             <MudSelect T="int" Label="Status"
-                       @bind-Value="model.VolunteerTaskStatusId"
+                       Value="model.VolunteerTaskStatusId"
+                       ValueChanged="OnStatusChanged"
                        For="@(() => model.VolunteerTaskStatusId)"
                        Required="true"
                        Class="mb-3">
@@ -58,6 +57,14 @@ else
                     <MudSelectItem T="int" Value="@status.Id">@status.Name</MudSelectItem>
                 }
             </MudSelect>
+
+            <MudDatePicker Label="Završeno"
+                           @bind-Date="model.CompletedAt"
+                           For="@(() => model.CompletedAt)"
+                           Clearable="true"
+                           Disabled="@(model.VolunteerTaskStatusId != 4)"
+                           HelperText="Unosi se samo kad je status Završeno."
+                           Class="mb-3" />
 
             <MudSelect T="int" Label="Tip zadatka"
                        @bind-Value="model.VolunteerTaskTypeId"
@@ -162,6 +169,17 @@ else
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private void OnStatusChanged(int statusId)
+    {
+        model.VolunteerTaskStatusId = statusId;
+
+        // 4 = Završeno; za sve ostale statuse datum završetka mora biti prazan
+        if (statusId != 4)
+        {
+            model.CompletedAt = null;
         }
     }
 
