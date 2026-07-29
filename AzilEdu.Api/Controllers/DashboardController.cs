@@ -19,6 +19,18 @@ public class DashboardController : ControllerBase
     [HttpGet("summary")]
     public async Task<ActionResult<DashboardSummaryDto>> GetSummary()
     {
+        var today = DateTime.Today;
+
+        var moneyAmounts = await _context.Donations
+            .Where(donation => donation.DonationTypeId == 1 && donation.Amount != null)
+            .Select(donation => donation.Amount!.Value)
+            .ToListAsync();
+
+        var materialValues = await _context.Donations
+            .Where(donation => donation.DonationTypeId != 1 && donation.EstimatedValue != null)
+            .Select(donation => donation.EstimatedValue!.Value)
+            .ToListAsync();
+
         var summary = new DashboardSummaryDto
         {
             AnimalsCount = await _context.Animals.CountAsync(),
@@ -26,9 +38,51 @@ public class DashboardController : ControllerBase
             ActiveVolunteersCount = await _context.Volunteers.CountAsync(volunteer => volunteer.VolunteerStatusId == 2),
             OpenVolunteerTasksCount = await _context.VolunteerTasks.CountAsync(task => task.VolunteerTaskStatusId == 1),
             ActiveDonorsCount = await _context.Donors.CountAsync(donor => donor.DonorStatusId == 2),
-            EmployeesCount = await _context.Employees.CountAsync()
+            EmployeesCount = await _context.Employees.CountAsync(),
+
+            DonationsCount = await _context.Donations.CountAsync(),
+
+            PendingDonationsCount = await _context.Donations.CountAsync(donation => donation.DonationStatusId == 1),
+
+            MoneyDonationsTotal = moneyAmounts.Sum(),
+            EstimatedMaterialDonationsTotal = materialValues.Sum(),
+
+            OverdueVolunteerTasksCount = await _context.VolunteerTasks.CountAsync(task =>
+                task.DueDate != null
+                && task.DueDate < today
+                && task.CompletedAt == null)
         };
 
         return Ok(summary);
+    }
+
+    [HttpGet("recent-donations")]
+    public async Task<ActionResult<List<RecentDonationDto>>> GetRecentDonations()
+    {
+        var donations = await _context.Donations
+            .Include(donation => donation.Donor)
+            .Include(donation => donation.DonationType)
+            .OrderByDescending(donation => donation.DonationDate)
+            .ThenByDescending(donation => donation.Id)
+            .Take(5)
+            .ToListAsync();
+
+        var result = donations
+            .Select(donation => new RecentDonationDto
+            {
+                Id = donation.Id,
+                DonorName = donation.Donor != null
+                    ? (!string.IsNullOrWhiteSpace(donation.Donor.OrganizationName)
+                        ? donation.Donor.OrganizationName
+                        : donation.Donor.FirstName + " " + donation.Donor.LastName)
+                    : string.Empty,
+                DonationType = donation.DonationType != null ? donation.DonationType.Name : string.Empty,
+                DonationDate = donation.DonationDate,
+                Amount = donation.Amount,
+                ItemName = donation.ItemName
+            })
+            .ToList();
+
+        return Ok(result);
     }
 }

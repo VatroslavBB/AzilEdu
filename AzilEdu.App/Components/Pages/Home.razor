@@ -118,7 +118,119 @@ else
                 </MudStack>
             </MudPaper>
         </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Inventory"
+                             Color="Color.Primary"
+                             Size="Size.Large" />
+                    <div>
+                        <MudText Typo="Typo.subtitle2">Ukupno donacija</MudText>
+                        <MudText Typo="Typo.h4">@summary.DonationsCount</MudText>
+                    </div>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.HourglassTop"
+                             Color="Color.Info"
+                             Size="Size.Large" />
+                    <div>
+                        <MudText Typo="Typo.subtitle2">Donacije na čekanju</MudText>
+                        <MudText Typo="Typo.h4">@summary.PendingDonationsCount</MudText>
+                    </div>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Payments"
+                             Color="Color.Success"
+                             Size="Size.Large" />
+                    <div>
+                        <MudText Typo="Typo.subtitle2">Ukupan novčani iznos</MudText>
+                        <MudText Typo="Typo.h4">@summary.MoneyDonationsTotal.ToString("N2") EUR</MudText>
+                    </div>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Category"
+                             Color="Color.Secondary"
+                             Size="Size.Large" />
+                    <div>
+                        <MudText Typo="Typo.subtitle2">Procijenjena vrijednost materijalnih</MudText>
+                        <MudText Typo="Typo.h4">@summary.EstimatedMaterialDonationsTotal.ToString("N2") EUR</MudText>
+                    </div>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Warning"
+                             Color="Color.Error"
+                             Size="Size.Large" />
+                    <div>
+                        <MudText Typo="Typo.subtitle2">Zadaci kojima je rok prošao</MudText>
+                        <MudText Typo="Typo.h4">@summary.OverdueVolunteerTasksCount</MudText>
+                    </div>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
     </MudGrid>
+
+    <MudPaper Class="pa-4 mt-6" Elevation="2">
+        <MudText Typo="Typo.h6" Class="mb-3">Zadnjih 5 donacija</MudText>
+
+        <MudTable Items="recentDonations" Hover="true" Dense="true" Elevation="0">
+            <HeaderContent>
+                <MudTh>Datum</MudTh>
+                <MudTh>Donator</MudTh>
+                <MudTh>Tip</MudTh>
+                <MudTh>Donacija</MudTh>
+            </HeaderContent>
+
+            <RowTemplate>
+                <MudTd DataLabel="Datum">@context.DonationDate.ToString("dd.MM.yyyy.")</MudTd>
+                <MudTd DataLabel="Donator">@context.DonorName</MudTd>
+                <MudTd DataLabel="Tip">@context.DonationType</MudTd>
+                <MudTd DataLabel="Donacija">
+                    @if (context.Amount.HasValue)
+                    {
+                        <text>@context.Amount.Value.ToString("N2") EUR</text>
+                    }
+                    else
+                    {
+                        @(string.IsNullOrWhiteSpace(context.ItemName) ? "-" : context.ItemName)
+                    }
+                </MudTd>
+            </RowTemplate>
+
+            <NoRecordsContent>
+                <MudText Typo="Typo.body2" Class="pa-4">
+                    Još nema evidentiranih donacija.
+                </MudText>
+            </NoRecordsContent>
+        </MudTable>
+
+        <MudButton Href="/donations"
+                   Variant="Variant.Text"
+                   Color="Color.Primary"
+                   Class="mt-2">
+            Sve donacije
+        </MudButton>
+    </MudPaper>
 
     <MudPaper Class="pa-4 mt-6" Elevation="1">
         <MudText Typo="Typo.h6" Class="mb-2">
@@ -135,6 +247,7 @@ else
 
 @code {
     private DashboardSummaryDto? summary;
+    private List<RecentDonationDto> recentDonations = new();
     private bool isLoading = true;
     private string? errorMessage;
 
@@ -143,6 +256,9 @@ else
         try
         {
             summary = await Http.GetFromJsonAsync<DashboardSummaryDto>("api/dashboard/summary");
+
+            recentDonations = await Http.GetFromJsonAsync<List<RecentDonationDto>>(
+                "api/dashboard/recent-donations") ?? new();
         }
         catch (Exception ex)
         {
