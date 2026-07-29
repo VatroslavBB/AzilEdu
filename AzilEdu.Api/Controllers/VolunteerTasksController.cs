@@ -34,6 +34,8 @@ public class VolunteerTasksController : ControllerBase
             .Include(task => task.VolunteerTaskType)
             .AsQueryable();
 
+        // Kasnije će volunteerId dolaziti iz prijavljenog korisnika.
+
         if (Expired.HasValue && Expired == true)
         {
             query = query.Where(task => (task.DueDate < DateTime.Today)

@@ -17,6 +17,8 @@ public class DonorsController : ControllerBase
         _context = context;
     }
 
+    // DonorId će kasnije biti povezan s prijavljenim korisnikom preko AppUserId.
+
     [HttpGet]
     public async Task<ActionResult<List<DonorDto>>> GetDonors()
     {

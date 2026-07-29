@@ -31,6 +31,8 @@ public class DonationsController : ControllerBase
             .Include(donation => donation.DonationStatus)
             .AsQueryable();
 
+        // Kasnije će donator vidjeti samo svoje donacije.
+
         if (typeId.HasValue)
         {
             query = query.Where(donation => donation.DonationTypeId == typeId.Value);

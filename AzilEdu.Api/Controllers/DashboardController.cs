@@ -16,6 +16,8 @@ public class DashboardController : ControllerBase
         _context = context;
     }
 
+    // Kasnije će admin vidjeti sve podatke, a ostale role samo svoj dio aplikacije.
+
     [HttpGet("summary")]
     public async Task<ActionResult<DashboardSummaryDto>> GetSummary()
     {
