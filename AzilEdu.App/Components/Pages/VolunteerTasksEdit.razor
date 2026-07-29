@@ -24,14 +24,19 @@
 else
 {
     <EditForm Model="model" OnValidSubmit="SaveTask" FormName="volunteer-task-edit">
+        <DataAnnotationsValidator />
+
         <MudPaper Class="pa-4">
             <MudTextField Label="Naslov"
                           @bind-Value="model.Title"
+                          For="@(() => model.Title)"
                           Required="true"
+                          Immediate="true"
                           Class="mb-3" />
 
             <MudTextField Label="Opis"
                           @bind-Value="model.Description"
+                          For="@(() => model.Description)"
                           Lines="4"
                           Class="mb-3" />
 
@@ -45,6 +50,7 @@ else
 
             <MudSelect T="int" Label="Status"
                        @bind-Value="model.VolunteerTaskStatusId"
+                       For="@(() => model.VolunteerTaskStatusId)"
                        Required="true"
                        Class="mb-3">
                 @foreach (var status in statuses)
@@ -55,6 +61,7 @@ else
 
             <MudSelect T="int" Label="Tip zadatka"
                        @bind-Value="model.VolunteerTaskTypeId"
+                       For="@(() => model.VolunteerTaskTypeId)"
                        Required="true"
                        Class="mb-3">
                 @foreach (var type in types)
@@ -85,6 +92,7 @@ else
 
             <MudTextField Label="Napomena"
                           @bind-Value="model.Notes"
+                          For="@(() => model.Notes)"
                           Lines="3"
                           Class="mb-4" />
 
@@ -159,11 +167,7 @@ else
 
     private async Task SaveTask()
     {
-        if (string.IsNullOrWhiteSpace(model.Title))
-        {
-            errorMessage = "Naslov zadatka je obavezan.";
-            return;
-        }
+        errorMessage = null;
 
         var response = await Http.PutAsJsonAsync($"api/volunteertasks/{Id}", model);
 
