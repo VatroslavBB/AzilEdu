@@ -31,6 +31,9 @@ public class DonorsController : ControllerBase
                 FirstName = d.FirstName,
                 LastName = d.LastName,
                 OrganizationName = d.OrganizationName,
+                DisplayName = d.OrganizationName != string.Empty
+                    ? d.OrganizationName
+                    : d.FirstName + " " + d.LastName,
                 Email = d.Email,
                 Phone = d.Phone,
                 Address = d.Address,
@@ -47,7 +50,26 @@ public class DonorsController : ControllerBase
         return Ok(donors);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("lookup")]
+    public async Task<ActionResult<List<LookupDto>>> GetDonorsLookup()
+    {
+        var donors = await _context.Donors
+            .OrderBy(donor => donor.OrganizationName)
+            .ThenBy(donor => donor.LastName)
+            .ThenBy(donor => donor.FirstName)
+            .Select(donor => new LookupDto
+            {
+                Id = donor.Id,
+                Name = donor.OrganizationName != string.Empty
+                    ? donor.OrganizationName
+                    : donor.FirstName + " " + donor.LastName
+            })
+            .ToListAsync();
+
+        return Ok(donors);
+    }
+
+    [HttpGet("{id:int}")]
     public async Task<ActionResult<DonorDto>> GetDonorById(int id)
     {
         var donor = await _context.Donors
@@ -64,6 +86,7 @@ public class DonorsController : ControllerBase
             FirstName = donor.FirstName,
             LastName = donor.LastName,
             OrganizationName = donor.OrganizationName,
+            DisplayName = GetDisplayName(donor),
             Email = donor.Email,
             Phone = donor.Phone,
             Address = donor.Address,
@@ -114,6 +137,7 @@ public class DonorsController : ControllerBase
             FirstName = savedDonor.FirstName,
             LastName = savedDonor.LastName,
             OrganizationName = savedDonor.OrganizationName,
+            DisplayName = GetDisplayName(savedDonor),
             Email = savedDonor.Email,
             Phone = savedDonor.Phone,
             Address = savedDonor.Address,
@@ -129,7 +153,7 @@ public class DonorsController : ControllerBase
         return CreatedAtAction(nameof(GetDonorById), new { id = donor.Id }, result);
     }
 
-    [HttpPut("{id}")]
+    [HttpPut("{id:int}")]
     public async Task<IActionResult> UpdateDonor(int id, SaveDonorDto dto)
     {
         var donor = await _context.Donors.FindAsync(id);
@@ -154,7 +178,7 @@ public class DonorsController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteDonor(int id)
     {
         var donor = await _context.Donors.FindAsync(id);
@@ -166,5 +190,12 @@ public class DonorsController : ControllerBase
         await _context.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    private static string GetDisplayName(Donor donor)
+    {
+        return !string.IsNullOrWhiteSpace(donor.OrganizationName)
+            ? donor.OrganizationName
+            : $"{donor.FirstName} {donor.LastName}";
     }
 }

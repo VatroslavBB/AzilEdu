@@ -30,6 +30,7 @@ public class EmployeesController : ControllerBase
                 Id = e.Id,
                 FirstName = e.FirstName,
                 LastName = e.LastName,
+                FullName = e.FirstName + " " + e.LastName,
                 Email = e.Email,
                 Phone = e.Phone,
                 EmployeeNumber = e.EmployeeNumber,
@@ -45,7 +46,23 @@ public class EmployeesController : ControllerBase
         return Ok(employees);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("lookup")]
+    public async Task<ActionResult<List<LookupDto>>> GetEmployeesLookup()
+    {
+        var employees = await _context.Employees
+            .OrderBy(employee => employee.LastName)
+            .ThenBy(employee => employee.FirstName)
+            .Select(employee => new LookupDto
+            {
+                Id = employee.Id,
+                Name = employee.FirstName + " " + employee.LastName
+            })
+            .ToListAsync();
+
+        return Ok(employees);
+    }
+
+    [HttpGet("{id:int}")]
     public async Task<ActionResult<EmployeeDto>> GetEmployeeById(int id)
     {
         var employee = await _context.Employees
@@ -61,6 +78,7 @@ public class EmployeesController : ControllerBase
             Id = employee.Id,
             FirstName = employee.FirstName,
             LastName = employee.LastName,
+            FullName = $"{employee.FirstName} {employee.LastName}",
             Email = employee.Email,
             Phone = employee.Phone,
             EmployeeNumber = employee.EmployeeNumber,
@@ -107,6 +125,7 @@ public class EmployeesController : ControllerBase
             Id = savedEmployee.Id,
             FirstName = savedEmployee.FirstName,
             LastName = savedEmployee.LastName,
+            FullName = $"{savedEmployee.FirstName} {savedEmployee.LastName}",
             Email = savedEmployee.Email,
             Phone = savedEmployee.Phone,
             EmployeeNumber = savedEmployee.EmployeeNumber,
@@ -121,7 +140,7 @@ public class EmployeesController : ControllerBase
         return CreatedAtAction(nameof(GetEmployeeById), new { id = employee.Id }, result);
     }
 
-    [HttpPut("{id}")]
+    [HttpPut("{id:int}")]
     public async Task<IActionResult> UpdateEmployee(int id, SaveEmployeeDto dto)
     {
         var employee = await _context.Employees.FindAsync(id);
@@ -144,7 +163,7 @@ public class EmployeesController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteEmployee(int id)
     {
         var employee = await _context.Employees.FindAsync(id);

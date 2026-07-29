@@ -43,7 +43,22 @@ public class AnimalsController : ControllerBase
     }
 
 
-    [HttpGet("{id}")]
+    [HttpGet("lookup")]
+    public async Task<ActionResult<List<LookupDto>>> GetAnimalsLookup()
+    {
+        var animals = await _context.Animals
+            .OrderBy(animal => animal.Name)
+            .Select(animal => new LookupDto
+            {
+                Id = animal.Id,
+                Name = animal.Name
+            })
+            .ToListAsync();
+
+        return Ok(animals);
+    }
+
+    [HttpGet("{id:int}")]
     public async Task<ActionResult<AnimalDto>> GetAnimalById(int id)
     {
         var animal = await _context.Animals
@@ -118,7 +133,7 @@ public class AnimalsController : ControllerBase
     }
 
 
-    [HttpPut("{id}")]
+    [HttpPut("{id:int}")]
     public async Task<IActionResult> UpdateAnimal(int id, SaveAnimalDto dto)
     {
         var animal = await _context.Animals.FindAsync(id);
@@ -142,7 +157,7 @@ public class AnimalsController : ControllerBase
     }
 
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteAnimal(int id)
     {
         var animal = await _context.Animals.FindAsync(id);

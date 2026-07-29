@@ -29,6 +29,7 @@ public class VolunteersController : ControllerBase
                 Id = v.Id,
                 FirstName = v.FirstName,
                 LastName = v.LastName,
+                FullName = v.FirstName + " " + v.LastName,
                 Email = v.Email,
                 Phone = v.Phone,
                 Skills = v.Skills,
@@ -42,7 +43,23 @@ public class VolunteersController : ControllerBase
         return Ok(volunteers);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("lookup")]
+    public async Task<ActionResult<List<LookupDto>>> GetVolunteersLookup()
+    {
+        var volunteers = await _context.Volunteers
+            .OrderBy(volunteer => volunteer.LastName)
+            .ThenBy(volunteer => volunteer.FirstName)
+            .Select(volunteer => new LookupDto
+            {
+                Id = volunteer.Id,
+                Name = volunteer.FirstName + " " + volunteer.LastName
+            })
+            .ToListAsync();
+
+        return Ok(volunteers);
+    }
+
+    [HttpGet("{id:int}")]
     public async Task<ActionResult<VolunteerDto>> GetVolunteerById(int id)
     {
         var volunteer = await _context.Volunteers
@@ -57,6 +74,7 @@ public class VolunteersController : ControllerBase
             Id = volunteer.Id,
             FirstName = volunteer.FirstName,
             LastName = volunteer.LastName,
+            FullName = $"{volunteer.FirstName} {volunteer.LastName}",
             Email = volunteer.Email,
             Phone = volunteer.Phone,
             Skills = volunteer.Skills,
@@ -100,6 +118,7 @@ public class VolunteersController : ControllerBase
             Id = savedVolunteer.Id,
             FirstName = savedVolunteer.FirstName,
             LastName = savedVolunteer.LastName,
+            FullName = $"{savedVolunteer.FirstName} {savedVolunteer.LastName}",
             Email = savedVolunteer.Email,
             Phone = savedVolunteer.Phone,
             Skills = savedVolunteer.Skills,
@@ -112,7 +131,7 @@ public class VolunteersController : ControllerBase
         return CreatedAtAction(nameof(GetVolunteerById), new { id = volunteer.Id }, result);
     }
 
-    [HttpPut("{id}")]
+    [HttpPut("{id:int}")]
     public async Task<IActionResult> UpdateVolunteer(int id, SaveVolunteerDto dto)
     {
         var volunteer = await _context.Volunteers.FindAsync(id);
@@ -134,7 +153,7 @@ public class VolunteersController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteVolunteer(int id)
     {
         var volunteer = await _context.Volunteers.FindAsync(id);
