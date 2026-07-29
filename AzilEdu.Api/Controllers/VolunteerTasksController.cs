@@ -21,7 +21,8 @@ public class VolunteerTasksController : ControllerBase
     public async Task<ActionResult<List<VolunteerTaskDto>>> GetVolunteerTasks(
         [FromQuery] int? statusId,
         [FromQuery] int? volunteerId,
-        [FromQuery] int? animalId)
+        [FromQuery] int? animalId,
+        [FromQuery] int? typeId)
     {
         var query = _context.VolunteerTasks
             .Include(task => task.Volunteer)
@@ -33,6 +34,10 @@ public class VolunteerTasksController : ControllerBase
         if (statusId.HasValue)
         {
             query = query.Where(task => task.VolunteerTaskStatusId == statusId.Value);
+        }
+        if (typeId.HasValue)
+        {
+            query = query.Where(task => task.VolunteerTaskTypeId == typeId.Value);
         }
 
         if (volunteerId.HasValue)

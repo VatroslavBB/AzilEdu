@@ -32,6 +32,19 @@
                           Immediate="true" />
         </MudItem>
 
+        <MudItem>
+            <MudSelect T="int?" Label="Tip"
+                @bind-Value="selectedTypeId"
+                Clearable="true">
+                @foreach (var t in types)
+                {
+                    <MudSelectItem T="int?" Value="@((int?)t.Id)">
+                        @t.Name
+                    </MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
         <MudItem xs="12" md="3">
             <MudSelect T="int?" Label="Status"
                        @bind-Value="selectedStatusId"
@@ -158,6 +171,7 @@ else
     private int? selectedStatusId;
     private int? selectedVolunteerId;
     private int? selectedAnimalId;
+    private int? selectedTypeId;
 
     private bool isLoading = true;
     private string? errorMessage;
@@ -196,6 +210,11 @@ else
 
             var query = new List<string>();
 
+            if (selectedTypeId.HasValue)
+            {
+                query.Add($"typeId={selectedTypeId.Value}");
+            }
+
             if (selectedStatusId.HasValue)
                 query.Add($"statusId={selectedStatusId.Value}");
 
@@ -228,6 +247,7 @@ else
         selectedStatusId = null;
         selectedVolunteerId = null;
         selectedAnimalId = null;
+        selectedTypeId = null;
 
         await LoadTasks();
     }
