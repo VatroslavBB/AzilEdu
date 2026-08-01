@@ -82,6 +82,15 @@
 
         <MudDivider Class="my-2" />
 
+        <div class="px-4 py-2">
+            <MudText Typo="Typo.body2">
+                @CurrentUser.User?.DisplayName
+            </MudText>
+            <MudText Typo="Typo.caption">
+                @string.Join(", ", CurrentUser.User?.Roles ?? new List<string>())
+            </MudText>
+        </div>
+
         <MudNavLink Icon="@Icons.Material.Filled.Logout"
                     OnClick="HandleLogout">
             Odjava

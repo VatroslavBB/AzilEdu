@@ -46,6 +46,38 @@ else if (CurrentUser.HasRole("Donor"))
     </MudText>
 }
 
+@if (CurrentUser.HasRole("Volunteer") && myUnfinishedTasks is not null)
+{
+    <MudCard Class="mb-6" Style="max-width: 420px">
+        <MudCardContent>
+            <MudText Typo="Typo.subtitle2">Moji nezavršeni zadaci</MudText>
+            <MudText Typo="Typo.h4">@myUnfinishedTasks</MudText>
+            <MudButton Href="/my-tasks"
+                       Variant="Variant.Text"
+                       Color="Color.Primary"
+                       Class="mt-2">
+                Otvori moje zadatke
+            </MudButton>
+        </MudCardContent>
+    </MudCard>
+}
+
+@if (CurrentUser.HasRole("Donor") && myDonationsCount is not null)
+{
+    <MudCard Class="mb-6" Style="max-width: 420px">
+        <MudCardContent>
+            <MudText Typo="Typo.subtitle2">Moje donacije</MudText>
+            <MudText Typo="Typo.h4">@myDonationsCount</MudText>
+            <MudButton Href="/my-donations"
+                       Variant="Variant.Text"
+                       Color="Color.Primary"
+                       Class="mt-2">
+                Otvori moje donacije
+            </MudButton>
+        </MudCardContent>
+    </MudCard>
+}
+
 @if (isLoading)
 {
     <div class="d-flex justify-center my-6">
@@ -284,6 +316,9 @@ else
     private bool isLoading = true;
     private string? errorMessage;
 
+    private int? myUnfinishedTasks;
+    private int? myDonationsCount;
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -292,6 +327,8 @@ else
 
             recentDonations = await Http.GetFromJsonAsync<List<RecentDonationDto>>(
                 "api/dashboard/recent-donations") ?? new();
+
+            await LoadMyDataAsync();
         }
         catch (Exception ex)
         {
@@ -300,6 +337,30 @@ else
         finally
         {
             isLoading = false;
+        }
+    }
+
+    // Vlastiti podaci se i dalje dohvacaju API filterima, ne filtriranjem svih zapisa.
+    private async Task LoadMyDataAsync()
+    {
+        var volunteerId = CurrentUser.User?.VolunteerId;
+
+        if (CurrentUser.HasRole("Volunteer") && volunteerId is not null)
+        {
+            var myTasks = await Http.GetFromJsonAsync<List<VolunteerTaskDto>>(
+                $"api/volunteertasks?volunteerId={volunteerId}") ?? new();
+
+            myUnfinishedTasks = myTasks.Count(task => task.Status != "Završeno");
+        }
+
+        var donorId = CurrentUser.User?.DonorId;
+
+        if (CurrentUser.HasRole("Donor") && donorId is not null)
+        {
+            var myDonations = await Http.GetFromJsonAsync<List<DonationDto>>(
+                $"api/donations?donorId={donorId}") ?? new();
+
+            myDonationsCount = myDonations.Count;
         }
     }
 }

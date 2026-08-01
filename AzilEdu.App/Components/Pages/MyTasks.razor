@@ -29,6 +29,31 @@ else if (tasks.Count == 0)
 }
 else
 {
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" sm="6">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle2">Ukupno zadataka</MudText>
+                <MudText Typo="Typo.h4">@tasks.Count</MudText>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle2">Nezavršeni zadaci</MudText>
+                <MudText Typo="Typo.h4">@UnfinishedCount</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @if (OverdueCount > 0)
+    {
+        <MudAlert Severity="Severity.Warning" Class="mb-4">
+            @(OverdueCount == 1
+                ? "Jedan zadatak ima prošli rok, a nije završen."
+                : $"{OverdueCount} zadataka ima prošli rok, a nisu završeni.")
+        </MudAlert>
+    }
+
     <MudTable Items="@tasks"
               Hover="true"
               Striped="true"
@@ -72,6 +97,15 @@ else
     private List<VolunteerTaskDto> tasks = new();
     private bool isLoading = true;
     private string? errorMessage;
+
+    private int UnfinishedCount =>
+        tasks.Count(task => task.Status != "Završeno");
+
+    private int OverdueCount =>
+        tasks.Count(task =>
+            task.DueDate.HasValue &&
+            task.DueDate.Value.Date < DateTime.Today &&
+            task.Status != "Završeno");
 
     protected override async Task OnInitializedAsync()
     {

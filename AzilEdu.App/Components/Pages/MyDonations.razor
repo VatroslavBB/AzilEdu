@@ -29,6 +29,29 @@ else if (donations.Count == 0)
 }
 else
 {
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle2">Ukupno donacija</MudText>
+                <MudText Typo="Typo.h4">@donations.Count</MudText>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle2">Zbroj novčanih donacija</MudText>
+                <MudText Typo="Typo.h4">@FormatMoney(MoneyTotal)</MudText>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle2">Procijenjena vrijednost materijalnih</MudText>
+                <MudText Typo="Typo.h4">@FormatMoney(MaterialTotal)</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
     <MudTable Items="@donations"
               Hover="true"
               Striped="true"
@@ -64,6 +87,14 @@ else
     private List<DonationDto> donations = new();
     private bool isLoading = true;
     private string? errorMessage;
+
+    private decimal MoneyTotal =>
+        donations.Sum(donation => donation.Amount ?? 0m);
+
+    private decimal MaterialTotal =>
+        donations
+            .Where(donation => donation.Amount is null)
+            .Sum(donation => donation.EstimatedValue ?? 0m);
 
     protected override async Task OnInitializedAsync()
     {

@@ -178,6 +178,65 @@ using (var scope = app.Services.CreateScope())
         );
     }
 
+    if (!await db.Volunteers.AnyAsync())
+    {
+        db.Volunteers.AddRange(
+            new Volunteer
+            {
+                FirstName = "Ana",
+                LastName = "Horvat",
+                Email = "ana.horvat@example.com",
+                Phone = "091 111 2222",
+                Skills = "Šetnja pasa, socijalizacija",
+                AvailableFrom = new DateTime(2026, 7, 1),
+                Notes = "Dostupna vikendom.",
+                VolunteerStatusId = 2
+            },
+            new Volunteer
+            {
+                FirstName = "Marko",
+                LastName = "Kovač",
+                Email = "marko.kovac@example.com",
+                Phone = "092 333 4444",
+                Skills = "Prijevoz, pomoć kod veterinara",
+                AvailableFrom = new DateTime(2026, 7, 10),
+                Notes = "Ima vlastiti automobil.",
+                VolunteerStatusId = 1
+            }
+        );
+    }
+
+    if (!await db.Donors.AnyAsync())
+    {
+        db.Donors.AddRange(
+            new Donor
+            {
+                FirstName = "Ivana",
+                LastName = "Babić",
+                Email = "ivana.babic@example.com",
+                Phone = "095 555 1212",
+                Address = "Ulica donatora 1",
+                City = "Osijek",
+                Notes = "Donira hranu jednom mjesečno.",
+                CreatedAt = new DateTime(2026, 6, 15),
+                DonorTypeId = 1,
+                DonorStatusId = 2
+            },
+            new Donor
+            {
+                OrganizationName = "Pet Plus d.o.o.",
+                Email = "kontakt@petplus.example.com",
+                Phone = "031 555 000",
+                Address = "Industrijska 12",
+                City = "Osijek",
+                Notes = "Potencijalni donator opreme.",
+                CreatedAt = new DateTime(2026, 6, 20),
+                DonorTypeId = 2,
+                DonorStatusId = 1
+            }
+        );
+    }
+
     if (!await db.Employees.AnyAsync())
     {
         db.Employees.AddRange(
@@ -209,13 +268,9 @@ using (var scope = app.Services.CreateScope())
     }
 
         await db.SaveChangesAsync();
-
-        // Tek sada, kad postoje volonteri, donatori i djelatnici,
-        // seeder moze njihove ID vrijednosti povezati s demo korisnicima.
         await AppUserSeeder.SeedAsync(db);
     }
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -223,8 +278,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// U developmentu radimo preko HTTP-a da ne ovisimo o dev certifikatu,
-// inace bi HTTP pozivi iz App-a bili preusmjereni na HTTPS.
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();

@@ -49,6 +49,13 @@ public class SaveDonationDto : IValidatableObject
                 new[] { nameof(ItemName) });
         }
 
+        if (!isMonetary && DonationTypeId > 0 && (Quantity is null || Quantity <= 0))
+        {
+            yield return new ValidationResult(
+                "Materijalna donacija mora imati količinu veću od nule.",
+                new[] { nameof(Quantity) });
+        }
+
         if (DonationDate > DateTime.Today)
         {
             yield return new ValidationResult(

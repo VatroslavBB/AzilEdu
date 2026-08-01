@@ -28,7 +28,6 @@ public class SaveVolunteerTaskDto : IValidatableObject
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        // 4 = Završeno u tablici VolunteerTaskStatuses
         var isCompleted = VolunteerTaskStatusId == 4;
 
         if (isCompleted && CompletedAt is null)
