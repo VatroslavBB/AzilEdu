@@ -11,9 +11,12 @@ builder.Services.AddRazorComponents()
     });
 
 builder.Services.AddMudServices();
+
+// Adresa API-ja dolazi iz konfiguracije (appsettings) da se ne mora mijenjati kod.
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7205/";
 builder.Services.AddScoped(sp => new HttpClient
 {
-    BaseAddress = new Uri("https://localhost:7205/")
+    BaseAddress = new Uri(apiBaseUrl)
 });
 
 var app = builder.Build();

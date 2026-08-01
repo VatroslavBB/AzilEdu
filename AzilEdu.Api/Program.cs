@@ -189,7 +189,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// U developmentu radimo preko HTTP-a da ne ovisimo o dev certifikatu,
+// inace bi HTTP pozivi iz App-a bili preusmjereni na HTTPS.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthorization();
 
