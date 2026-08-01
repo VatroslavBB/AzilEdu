@@ -34,10 +34,20 @@ public class AnimalsController : ControllerBase
                 ArrivalDate = a.ArrivalDate,
                 AnimalStatusId = a.AnimalStatusId,
                 Status = a.AnimalStatus != null ? a.AnimalStatus.Name : string.Empty,
-                ImageUrl = a.ImageUrl,
+                // Naslovna slika iz galerije ima prednost, ImageUrl ostaje rezervna.
+                ImageUrl = a.Media
+                    .Where(media =>
+                        media.IsCover &&
+                        media.MediaType == AnimalMediaType.Image)
+                    .OrderBy(media => media.SortOrder)
+                    .Select(media => "/uploads/animals/" + media.StoredFileName)
+                    .FirstOrDefault() ?? a.ImageUrl,
                 Description = a.Description
             })
             .ToListAsync();
+
+        foreach (var animal in animals)
+            animal.ImageUrl = ToPublicImageUrl(animal.ImageUrl);
 
         return Ok(animals);
     }
@@ -63,6 +73,7 @@ public class AnimalsController : ControllerBase
     {
         var animal = await _context.Animals
             .Include(a => a.AnimalStatus)
+            .Include(a => a.Media)
             .FirstOrDefaultAsync(a => a.Id == id);
 
         if (animal is null)
@@ -79,7 +90,7 @@ public class AnimalsController : ControllerBase
             ArrivalDate = animal.ArrivalDate,
             AnimalStatusId = animal.AnimalStatusId,
             Status = animal.AnimalStatus != null ? animal.AnimalStatus.Name : string.Empty,
-            ImageUrl = animal.ImageUrl,
+            ImageUrl = ToPublicImageUrl(GetCoverImagePath(animal)),
             Description = animal.Description
         };
 
@@ -169,5 +180,29 @@ public class AnimalsController : ControllerBase
         await _context.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    private static string GetCoverImagePath(Animal animal)
+    {
+        var cover = animal.Media
+            .Where(media =>
+                media.IsCover &&
+                media.MediaType == AnimalMediaType.Image)
+            .OrderBy(media => media.SortOrder)
+            .FirstOrDefault();
+
+        return cover is null
+            ? animal.ImageUrl
+            : $"/uploads/animals/{cover.StoredFileName}";
+    }
+
+    // Prenesene datoteke poslužuje API na svom portu, pa /uploads/... mora
+    // postati puna adresa. Slike iz App projekta (/images/...) ostaju kakve jesu.
+    private string ToPublicImageUrl(string imageUrl)
+    {
+        if (!imageUrl.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
+            return imageUrl;
+
+        return $"{Request.Scheme}://{Request.Host}{imageUrl}";
     }
 }

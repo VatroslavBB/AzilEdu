@@ -13,6 +13,7 @@ namespace AzilEdu.Api.Data
         public DbSet<Animal> Animals => Set<Animal>();
         public DbSet<HousingUnit> HousingUnits => Set<HousingUnit>();
         public DbSet<AnimalStatus> AnimalStatuses => Set<AnimalStatus>();
+        public DbSet<AnimalMedia> AnimalMedia => Set<AnimalMedia>();
 
         public DbSet<Volunteer> Volunteers => Set<Volunteer>();
         public DbSet<VolunteerStatus> VolunteerStatuses => Set<VolunteerStatus>();
@@ -33,6 +34,10 @@ namespace AzilEdu.Api.Data
         public DbSet<EmployeePosition> EmployeePositions => Set<EmployeePosition>();
         public DbSet<EmployeeStatus> EmployeeStatuses => Set<EmployeeStatus>();
 
+        public DbSet<AppUser> AppUsers => Set<AppUser>();
+        public DbSet<AppRole> AppRoles => Set<AppRole>();
+        public DbSet<AppUserRole> AppUserRoles => Set<AppUserRole>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -42,6 +47,14 @@ namespace AzilEdu.Api.Data
                 .WithMany(status => status.Animals)
                 .HasForeignKey(animal => animal.AnimalStatusId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Multimedija zivotinja: brisanjem zivotinje nestaju i zapisi o medijima,
+            // same datoteke na disku brisu se posebno u kontroleru.
+            modelBuilder.Entity<AnimalMedia>()
+                .HasOne(media => media.Animal)
+                .WithMany(animal => animal.Media)
+                .HasForeignKey(media => media.AnimalId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<AnimalStatus>().HasData(
                 new AnimalStatus { Id = 1, Name = "Dostupna za udomljenje" },
@@ -190,6 +203,51 @@ namespace AzilEdu.Api.Data
                 new EmployeeStatus { Id = 1, Name = "Aktivan" },
                 new EmployeeStatus { Id = 2, Name = "Na dopustu ili bolovanju" },
                 new EmployeeStatus { Id = 3, Name = "Neaktivan" }
+            );
+
+            // Korisnici i uloge
+            modelBuilder.Entity<AppUser>()
+                .HasIndex(user => user.Email)
+                .IsUnique();
+
+            modelBuilder.Entity<AppUserRole>()
+                .HasKey(userRole => new { userRole.AppUserId, userRole.AppRoleId });
+
+            modelBuilder.Entity<AppUserRole>()
+                .HasOne(userRole => userRole.AppUser)
+                .WithMany(user => user.UserRoles)
+                .HasForeignKey(userRole => userRole.AppUserId);
+
+            modelBuilder.Entity<AppUserRole>()
+                .HasOne(userRole => userRole.AppRole)
+                .WithMany(role => role.UserRoles)
+                .HasForeignKey(userRole => userRole.AppRoleId);
+
+            modelBuilder.Entity<AppUser>()
+                .HasOne(user => user.Donor)
+                .WithMany()
+                .HasForeignKey(user => user.DonorId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<AppUser>()
+                .HasOne(user => user.Volunteer)
+                .WithMany()
+                .HasForeignKey(user => user.VolunteerId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<AppUser>()
+                .HasOne(user => user.Employee)
+                .WithMany()
+                .HasForeignKey(user => user.EmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Korisnike ne seedamo kroz HasData jer lozinke hashiramo u kodu.
+            modelBuilder.Entity<AppRole>().HasData(
+                new AppRole { Id = 1, Name = "User", DisplayName = "Korisnik" },
+                new AppRole { Id = 2, Name = "Admin", DisplayName = "Administrator" },
+                new AppRole { Id = 3, Name = "Employee", DisplayName = "Djelatnik" },
+                new AppRole { Id = 4, Name = "Volunteer", DisplayName = "Volonter" },
+                new AppRole { Id = 5, Name = "Donor", DisplayName = "Donator" }
             );
         }
     }

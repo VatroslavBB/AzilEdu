@@ -1,17 +1,50 @@
 @page "/"
 @rendermode InteractiveServer
 
+@using AzilEdu.App.Services
 @using AzilEdu.Shared.DTOs
 @using System.Net.Http.Json
 @using MudBlazor
 
 @inject HttpClient Http
+@inject CurrentUserService CurrentUser
 
 <MudText Typo="Typo.h3" Class="mb-2">AzilEdu</MudText>
 
 <MudText Typo="Typo.body1" Class="mb-6">
     Pregled trenutnog stanja azila.
 </MudText>
+
+@if (!CurrentUser.IsLoggedIn)
+{
+    <MudAlert Severity="Severity.Info" Class="mb-4">
+        Prijavi se da vidiš dashboard prema svojoj ulozi.
+    </MudAlert>
+}
+else if (CurrentUser.HasRole("Admin"))
+{
+    <MudText Typo="Typo.h5" Class="mb-4">
+        Administratorski pregled cijelog sustava
+    </MudText>
+}
+else if (CurrentUser.HasRole("Employee"))
+{
+    <MudText Typo="Typo.h5" Class="mb-4">
+        Operativni pregled azila
+    </MudText>
+}
+else if (CurrentUser.HasRole("Volunteer"))
+{
+    <MudText Typo="Typo.h5" Class="mb-4">
+        Dobrodošao/la. Pogledaj svoje volonterske zadatke.
+    </MudText>
+}
+else if (CurrentUser.HasRole("Donor"))
+{
+    <MudText Typo="Typo.h5" Class="mb-4">
+        Hvala na podršci azilu. Ovdje možeš vidjeti svoje donacije.
+    </MudText>
+}
 
 @if (isLoading)
 {

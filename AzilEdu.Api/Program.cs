@@ -178,7 +178,41 @@ using (var scope = app.Services.CreateScope())
         );
     }
 
+    if (!await db.Employees.AnyAsync())
+    {
+        db.Employees.AddRange(
+            new Employee
+            {
+                FirstName = "Petra",
+                LastName = "Novak",
+                Email = "petra.novak@aziledu.example.com",
+                Phone = "031 100 200",
+                EmployeeNumber = "EMP-001",
+                HireDate = new DateTime(2025, 3, 1),
+                Notes = "Koordinira raspored volontera.",
+                EmployeePositionId = 3,
+                EmployeeStatusId = 1
+            },
+            new Employee
+            {
+                FirstName = "Ivan",
+                LastName = "Marić",
+                Email = "ivan.maric@aziledu.example.com",
+                Phone = "031 100 201",
+                EmployeeNumber = "EMP-002",
+                HireDate = new DateTime(2024, 9, 10),
+                Notes = "Zadužen za svakodnevnu brigu o životinjama.",
+                EmployeePositionId = 1,
+                EmployeeStatusId = 1
+            }
+        );
+    }
+
         await db.SaveChangesAsync();
+
+        // Tek sada, kad postoje volonteri, donatori i djelatnici,
+        // seeder moze njihove ID vrijednosti povezati s demo korisnicima.
+        await AppUserSeeder.SeedAsync(db);
     }
 
 // Configure the HTTP request pipeline.
@@ -195,6 +229,9 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
+
+// Posluzuje datoteke iz wwwroot, npr. prenesene medije na /uploads/animals/...
+app.UseStaticFiles();
 
 app.UseAuthorization();
 

@@ -1,49 +1,114 @@
-﻿<MudNavMenu>
-    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">
-        Početna
-    </MudNavLink>
+@using AzilEdu.App.Services
+@inject CurrentUserService CurrentUser
+@inject NavigationManager Navigation
+@implements IDisposable
 
-    <MudNavLink Href="/animals" Icon="@Icons.Material.Filled.Pets">
-        Životinje
-    </MudNavLink>
+<MudNavMenu>
+    @if (!CurrentUser.IsLoggedIn)
+    {
+        <MudNavLink Href="/login" Icon="@Icons.Material.Filled.Login">
+            Prijava
+        </MudNavLink>
+    }
+    else
+    {
+        <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">
+            Početna
+        </MudNavLink>
 
-    <MudNavLink Href="/species" Icon="@Icons.Material.Filled.Category">
-        Vrste
-    </MudNavLink>
+        @if (CurrentUser.HasAnyRole("Admin", "Employee"))
+        {
+            <MudNavLink Href="/animals" Icon="@Icons.Material.Filled.Pets">
+                Životinje
+            </MudNavLink>
 
-    <MudNavLink Href="/breeds" Icon="@Icons.Material.Filled.Badge">
-        Pasmine
-    </MudNavLink>
+            <MudNavLink Href="/species" Icon="@Icons.Material.Filled.Category">
+                Vrste
+            </MudNavLink>
 
-    <MudNavLink Href="/housing-units" Icon="@Icons.Material.Filled.HomeWork">
-        Smještaj
-    </MudNavLink>
+            <MudNavLink Href="/breeds" Icon="@Icons.Material.Filled.Badge">
+                Pasmine
+            </MudNavLink>
 
-    <MudNavLink Href="/adopters" Icon="@Icons.Material.Filled.People">
-        Udomitelji
-    </MudNavLink>
+            <MudNavLink Href="/housing-units" Icon="@Icons.Material.Filled.HomeWork">
+                Smještaj
+            </MudNavLink>
 
-    <MudNavLink Href="/adoptions" Icon="@Icons.Material.Filled.Favorite">
-        Udomljenja
-    </MudNavLink>
+            <MudNavLink Href="/adopters" Icon="@Icons.Material.Filled.People">
+                Udomitelji
+            </MudNavLink>
 
-    <MudNavLink Href="/volunteers" Icon="@Icons.Material.Filled.VolunteerActivism">
-        Volonteri
-    </MudNavLink>
+            <MudNavLink Href="/adoptions" Icon="@Icons.Material.Filled.Favorite">
+                Udomljenja
+            </MudNavLink>
 
-    <MudNavLink Href="/volunteer-tasks" Icon="@Icons.Material.Filled.Assignment">
-        Zadaci
-    </MudNavLink>
+            <MudNavLink Href="/volunteers" Icon="@Icons.Material.Filled.VolunteerActivism">
+                Volonteri
+            </MudNavLink>
 
-    <MudNavLink Href="/donors" Icon="@Icons.Material.Filled.Redeem">
-        Donatori
-    </MudNavLink>
+            <MudNavLink Href="/volunteer-tasks" Icon="@Icons.Material.Filled.Assignment">
+                Zadaci
+            </MudNavLink>
 
-    <MudNavLink Href="/donations" Icon="@Icons.Material.Filled.Payments">
-        Donacije
-    </MudNavLink>
+            <MudNavLink Href="/donors" Icon="@Icons.Material.Filled.Redeem">
+                Donatori
+            </MudNavLink>
 
-    <MudNavLink Href="/employees" Icon="@Icons.Material.Filled.Work">
-        Djelatnici
-    </MudNavLink>
+            <MudNavLink Href="/donations" Icon="@Icons.Material.Filled.Payments">
+                Donacije
+            </MudNavLink>
+        }
+
+        @if (CurrentUser.HasRole("Admin"))
+        {
+            <MudNavLink Href="/employees" Icon="@Icons.Material.Filled.Work">
+                Djelatnici
+            </MudNavLink>
+        }
+
+        @if (CurrentUser.HasRole("Volunteer"))
+        {
+            <MudNavLink Href="/my-tasks" Icon="@Icons.Material.Filled.AssignmentInd">
+                Moji zadaci
+            </MudNavLink>
+        }
+
+        @if (CurrentUser.HasRole("Donor"))
+        {
+            <MudNavLink Href="/my-donations" Icon="@Icons.Material.Filled.CardGiftcard">
+                Moje donacije
+            </MudNavLink>
+        }
+
+        <MudDivider Class="my-2" />
+
+        <MudNavLink Icon="@Icons.Material.Filled.Logout"
+                    OnClick="HandleLogout">
+            Odjava
+        </MudNavLink>
+    }
 </MudNavMenu>
+
+@code {
+    protected override void OnInitialized()
+    {
+        CurrentUser.UserChanged += HandleUserChanged;
+    }
+
+    private void HandleUserChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleLogout()
+    {
+        CurrentUser.Logout();
+        Navigation.NavigateTo("/login");
+    }
+
+    // Bez odjave pretplate servis bi zadrzao referencu na uklonjenu komponentu.
+    public void Dispose()
+    {
+        CurrentUser.UserChanged -= HandleUserChanged;
+    }
+}
