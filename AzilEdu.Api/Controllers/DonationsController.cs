@@ -17,6 +17,8 @@ public class DonationsController : ControllerBase
         _context = context;
     }
 
+    [Microsoft.AspNetCore.Authorization.Authorize(
+    Policy = AzilEdu.Api.Security.AuthorizationPolicies.Staff)]
     [HttpGet]
     public async Task<ActionResult<List<DonationDto>>> GetDonations(
         [FromQuery] int? typeId,
@@ -72,6 +74,30 @@ public class DonationsController : ControllerBase
         return Ok(result);
     }
 
+    [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Donor")]
+    [HttpGet("mine")]
+    public async Task<ActionResult<List<DonationDto>>> GetMyDonations()
+    {
+        var donorClaim = User.FindFirst(
+            AzilEdu.Api.Security.AppClaimTypes.DonorId)?.Value;
+
+        if (!int.TryParse(donorClaim, out var donorId))
+            return Forbid();
+
+        var donations = await _context.Donations
+            .Include(donation => donation.Donor)
+            .Include(donation => donation.DonationType)
+            .Include(donation => donation.DonationStatus)
+            .Where(donation => donation.DonorId == donorId)
+            .OrderByDescending(donation => donation.DonationDate)
+            .ThenByDescending(donation => donation.Id)
+            .ToListAsync();
+
+        return Ok(donations.Select(ToDto).ToList());
+    }
+
+    [Microsoft.AspNetCore.Authorization.Authorize(
+    Policy = AzilEdu.Api.Security.AuthorizationPolicies.Staff)]
     [HttpGet("{id:int}")]
     public async Task<ActionResult<DonationDto>> GetDonationById(int id)
     {
@@ -89,6 +115,8 @@ public class DonationsController : ControllerBase
         return Ok(ToDto(donation));
     }
 
+    [Microsoft.AspNetCore.Authorization.Authorize(
+    Policy = AzilEdu.Api.Security.AuthorizationPolicies.Staff)]
     [HttpPost]
     public async Task<ActionResult<DonationDto>> CreateDonation(SaveDonationDto request)
     {
@@ -120,6 +148,8 @@ public class DonationsController : ControllerBase
             ToDto(createdDonation));
     }
 
+    [Microsoft.AspNetCore.Authorization.Authorize(
+    Policy = AzilEdu.Api.Security.AuthorizationPolicies.Staff)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> UpdateDonation(int id, SaveDonationDto request)
     {
@@ -145,6 +175,8 @@ public class DonationsController : ControllerBase
         return NoContent();
     }
 
+    [Microsoft.AspNetCore.Authorization.Authorize(
+    Policy = AzilEdu.Api.Security.AuthorizationPolicies.Staff)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteDonation(int id)
     {

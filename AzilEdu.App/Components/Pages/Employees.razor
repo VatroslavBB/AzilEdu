@@ -9,6 +9,13 @@
     Djelatnici dolaze iz baze preko API projekta. Pozicija i status čitaju se iz povezanih lookup tablica.
 </MudText>
 
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">
+        @errorMessage
+    </MudAlert>
+}
+
 <MudPaper Class="pa-4 mb-4">
     <MudGrid>
         <MudItem xs="12" md="5">
@@ -45,6 +52,14 @@
     </MudGrid>
 </MudPaper>
 
+@if (isLoading)
+{
+    <MudPaper Class="pa-8 d-flex justify-center" Elevation="0">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </MudPaper>
+}
+else
+{
 <MudTable Items="@employees" Filter="FilterEmployees" Hover="true" Striped="true" Bordered="true" Dense="true">
     <HeaderContent>
         <MudTh><MudTableSortLabel SortBy="new Func<EmployeeDto, object>(x => x.LastName)">Prezime</MudTableSortLabel></MudTh>
@@ -72,22 +87,41 @@
     </RowTemplate>
     <NoRecordsContent>
         <MudText Typo="Typo.body1" Class="pa-4">
-            Nema rezultata za zadane kriterije pretrage i filtera.
+            @(employees.Count == 0
+                ? "Još nema unesenih djelatnika."
+                : "Nema rezultata za zadane kriterije pretrage i filtera.")
         </MudText>
     </NoRecordsContent>
 </MudTable>
+}
 
 @code {
     private List<EmployeeDto> employees = new();
     private List<LookupDto> statusList = new();
+    private bool isLoading = true;
+    private string? errorMessage;
 
     private string searchString = string.Empty;
     private string? selectedStatus;
 
     protected override async Task OnInitializedAsync()
     {
-        employees = await Http.GetFromJsonAsync<List<EmployeeDto>>("api/employees") ?? new();
-        statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/employeestatuses") ?? new();
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            employees = await Http.GetFromJsonAsync<List<EmployeeDto>>("api/employees") ?? new();
+            statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/employeestatuses") ?? new();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Djelatnike nije moguće učitati: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private void ResetFilters()

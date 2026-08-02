@@ -17,37 +17,49 @@
     </MudAlert>
 }
 
-<MudStack Spacing="2">
-    <MudTextField @bind-Value="model.FirstName" Label="Ime" Required="true" Immediate="true" />
-    <MudTextField @bind-Value="model.LastName" Label="Prezime" Required="true" Immediate="true" />
-    <MudTextField @bind-Value="model.Email" Label="Email" Immediate="true" />
-    <MudTextField @bind-Value="model.Phone" Label="Telefon" Immediate="true" />
-    <MudTextField @bind-Value="model.Skills" Label="Vještine" Immediate="true" />
-    <MudDatePicker @bind-Date="availableFrom" Label="Dostupan od" />
+<EditForm Model="model" OnValidSubmit="SaveVolunteer" FormName="volunteer-create">
+    <DataAnnotationsValidator />
 
-    <MudSelect T="int"
-               Label="Status"
-               @bind-Value="model.VolunteerStatusId"
-               Variant="Variant.Outlined"
-               Required="true">
-        @foreach (var status in statusList)
-        {
-            <MudSelectItem Value="@status.Id">@status.Name</MudSelectItem>
-        }
-    </MudSelect>
+    <MudStack Spacing="2">
+        <MudTextField @bind-Value="model.FirstName" Label="Ime" Required="true" Immediate="true"
+                      For="@(() => model.FirstName)" />
+        <MudTextField @bind-Value="model.LastName" Label="Prezime" Required="true" Immediate="true"
+                      For="@(() => model.LastName)" />
+        <MudTextField @bind-Value="model.Email" Label="Email" Immediate="true"
+                      For="@(() => model.Email)" />
+        <MudTextField @bind-Value="model.Phone" Label="Telefon" Immediate="true"
+                      For="@(() => model.Phone)" />
+        <MudTextField @bind-Value="model.Skills" Label="Vještine" Immediate="true"
+                      For="@(() => model.Skills)" />
+        <MudDatePicker @bind-Date="availableFrom" Label="Dostupan od" />
 
-    <MudTextField @bind-Value="model.Notes" Label="Napomena" Lines="3" Immediate="true" />
+        <MudSelect T="int"
+                   Label="Status"
+                   @bind-Value="model.VolunteerStatusId"
+                   Variant="Variant.Outlined"
+                   Required="true"
+                   For="@(() => model.VolunteerStatusId)">
+            @foreach (var status in statusList)
+            {
+                <MudSelectItem Value="@status.Id">@status.Name</MudSelectItem>
+            }
+        </MudSelect>
 
-    <MudButton ButtonType="ButtonType.Button"
-               OnClick="SaveVolunteer"
-               Variant="Variant.Filled"
-               Color="Color.Primary">
-        Spremi
-    </MudButton>
-</MudStack>
+        <MudTextField @bind-Value="model.Notes" Label="Napomena" Lines="3" Immediate="true"
+                      For="@(() => model.Notes)" />
+
+        <MudButton ButtonType="ButtonType.Submit"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="isSaving">
+            @(isSaving ? "Spremam..." : "Spremi")
+        </MudButton>
+    </MudStack>
+</EditForm>
 
 @code {
     private string? errorMessage;
+    private bool isSaving;
 
     private List<LookupDto> statusList = new();
     private SaveVolunteerDto model = new();
@@ -55,32 +67,28 @@
 
     protected override async Task OnInitializedAsync()
     {
-        statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/volunteerstatuses") ?? new();
-
-        if (model.VolunteerStatusId == 0 && statusList.Count > 0)
+        try
         {
-            model.VolunteerStatusId = statusList[0].Id;
+            statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/volunteerstatuses") ?? new();
+
+            if (model.VolunteerStatusId == 0 && statusList.Count > 0)
+            {
+                model.VolunteerStatusId = statusList[0].Id;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Statuse nije moguće učitati: {ex.Message}";
         }
     }
 
     private async Task SaveVolunteer()
     {
+        isSaving = true;
+        errorMessage = null;
+
         try
         {
-            errorMessage = null;
-
-            if (string.IsNullOrWhiteSpace(model.FirstName) || string.IsNullOrWhiteSpace(model.LastName))
-            {
-                errorMessage = "Upiši barem obavezna polja: ime i prezime.";
-                return;
-            }
-
-            if (model.VolunteerStatusId == 0)
-            {
-                errorMessage = "Odaberi status volontera.";
-                return;
-            }
-
             model.AvailableFrom = availableFrom;
 
             var response = await Http.PostAsJsonAsync("api/volunteers", model);
@@ -96,6 +104,10 @@
         catch (Exception ex)
         {
             errorMessage = $"Greška kod spremanja: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
         }
     }
 }

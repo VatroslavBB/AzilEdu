@@ -3,11 +3,20 @@
 @using System.Net.Http.Json
 @using AzilEdu.Shared.DTOs
 @inject HttpClient Http
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
 
 <MudText Typo="Typo.h4" GutterBottom="true">Životinje</MudText>
 <MudText Typo="Typo.body1" Class="mb-4">
     Prikazujemo životinje koje dolaze iz SQLite baze preko API projekta.
 </MudText>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">
+        @errorMessage
+    </MudAlert>
+}
 
 <MudPaper Class="pa-4 mb-4">
     <MudGrid>
@@ -62,6 +71,14 @@
     Nova životinja
 </MudButton>
 
+@if (isLoading)
+{
+    <MudPaper Class="pa-8 d-flex justify-center" Elevation="0">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </MudPaper>
+}
+else
+{
 <MudTable Items="@animals" Filter="FilterAnimals" Hover="true" Striped="true" Bordered="true" Dense="true">
     <HeaderContent>
         <MudTh>Slika</MudTh>
@@ -77,7 +94,7 @@
     <RowTemplate>
         <MudTd DataLabel="Slika">
             <MudAvatar Size="Size.Large">
-                <MudImage Src="@context.ImageUrl" Alt="@context.Name" />
+                <MudImage Src="@GetImageUrl(context)" Alt="@context.Name" />
             </MudAvatar>
         </MudTd>
         <MudTd DataLabel="Ime">@context.Name</MudTd>
@@ -101,26 +118,57 @@
             <MudButton Variant="Variant.Text" Color="Color.Primary" Href="@($"/animals/edit/{context.Id}")">
                 Uredi
             </MudButton>
-            <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="@(() => DeleteAnimal(context.Id))">
+            <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="@(() => DeleteAnimal(context))">
                 Obriši
             </MudButton>
         </MudTd>
     </RowTemplate>
     <NoRecordsContent>
         <MudText Typo="Typo.body1" Class="pa-4">
-            Nema rezultata za zadane kriterije pretrage i filtera.
+            @(animals.Count == 0
+                ? "Još nema unesenih životinja."
+                : "Nema rezultata za zadane kriterije pretrage i filtera.")
         </MudText>
     </NoRecordsContent>
 </MudTable>
+}
 
 @code {
     private List<AnimalDto> animals = new();
     private List<LookupDto> statusList = new();
+    private bool isLoading = true;
+    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        animals = await Http.GetFromJsonAsync<List<AnimalDto>>("api/animals") ?? new();
-        statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/animalstatuses") ?? new();
+        await LoadAnimals();
+    }
+
+    private async Task LoadAnimals()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            animals = await Http.GetFromJsonAsync<List<AnimalDto>>("api/animals") ?? new();
+            statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/animalstatuses") ?? new();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Životinje nije moguće učitati: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private static string GetImageUrl(AnimalDto animal)
+    {
+        return string.IsNullOrWhiteSpace(animal.ImageUrl)
+            ? "/images/animals/placeholder.svg"
+            : animal.ImageUrl;
     }
 
     private string searchString = string.Empty;
@@ -204,13 +252,38 @@
         };
     }
 
-    private async Task DeleteAnimal(int id)
+    private async Task DeleteAnimal(AnimalDto animal)
     {
-        var response = await Http.DeleteAsync($"api/animals/{id}");
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            title: "Brisanje životinje",
+            message: $"Životinja \"{animal.Name}\" bit će trajno obrisana. Želiš li nastaviti?",
+            yesText: "Obriši",
+            cancelText: "Odustani");
 
-        if (response.IsSuccessStatusCode)
+        if (confirmed != true)
         {
-            animals = animals.Where(a => a.Id != id).ToList();
+            return;
+        }
+
+        errorMessage = null;
+
+        try
+        {
+            var response = await Http.DeleteAsync($"api/animals/{animal.Id}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                errorMessage = "Životinju nije moguće obrisati.";
+                return;
+            }
+
+            animals = animals.Where(a => a.Id != animal.Id).ToList();
+
+            Snackbar.Add("Životinja je obrisana.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Greška kod brisanja životinje: {ex.Message}";
         }
     }
 }

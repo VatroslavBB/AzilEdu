@@ -1,4 +1,4 @@
-﻿@page "/housingUnits/edit/{Id:int}"
+@page "/housingUnits/edit/{Id:int}"
 @rendermode InteractiveServer
 @using AzilEdu.Shared.DTOs
 @using System.Net.Http.Json
@@ -9,40 +9,88 @@
     Uredi smještajnu jedinicu
 </MudText>
 
-<MudForm @ref="form">
-    <MudStack Spacing="2">
-        <MudTextField @bind-Value="model.Name" Label="Ime" Required="true" />
-        <MudTextField @bind-Value="model.UnitType" Label="Tip smještaja" Required="true" />
-        <MudNumericField @bind-Value="model.Capacity" Label="Kapacitet" />
-        <MudNumericField @bind-Value="model.Occupied" Label="Zauzeto" />
-        <MudDatePicker @bind-Date="lastCleanedAt" Label="Zadnje čišćenje" />
-        <MudCheckBox @bind-Value="model.IsActive" Label="Aktivno" />
-        <MudTextField @bind-Value="model.ImageUrl" Label="Url Slike" />
-        <MudTextField @bind-Value="model.Note" Label="Dodatno" Lines="3" />
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">
+        @errorMessage
+    </MudAlert>
+}
 
-        <MudButton ButtonType="ButtonType.Button"
-                   OnClick="@UpdateHousingUnit"
-                   Variant="Variant.Filled"
-                   Color="Color.Primary">
-            Spremi promjene
-        </MudButton>
-    </MudStack>
-</MudForm>
+@if (isLoading)
+{
+    <MudPaper Class="pa-8 d-flex justify-center" Elevation="0">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </MudPaper>
+}
+else if (notFound)
+{
+    <MudAlert Severity="Severity.Warning">
+        Tražena smještajna jedinica nije pronađena.
+    </MudAlert>
+}
+else
+{
+    <EditForm Model="model" OnValidSubmit="UpdateHousingUnit" FormName="housing-unit-edit">
+        <DataAnnotationsValidator />
 
-@code 
+        <MudStack Spacing="2">
+            <MudTextField @bind-Value="model.Name" Label="Ime" Required="true"
+                          For="@(() => model.Name)" />
+            <MudTextField @bind-Value="model.UnitType" Label="Tip smještaja" Required="true"
+                          For="@(() => model.UnitType)" />
+            <MudNumericField @bind-Value="model.Capacity" Label="Kapacitet"
+                             For="@(() => model.Capacity)" />
+            <MudNumericField @bind-Value="model.Occupied" Label="Zauzeto"
+                             For="@(() => model.Occupied)" />
+            <MudDatePicker @bind-Date="lastCleanedAt" Label="Zadnje čišćenje" />
+            <MudCheckBox @bind-Value="model.IsActive" Label="Aktivno" />
+            <MudTextField @bind-Value="model.ImageUrl" Label="Url Slike"
+                          For="@(() => model.ImageUrl)" />
+            <MudTextField @bind-Value="model.Note" Label="Dodatno" Lines="3"
+                          For="@(() => model.Note)" />
+
+            <MudStack Row="true">
+                <MudButton ButtonType="ButtonType.Submit"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Disabled="isSaving">
+                    @(isSaving ? "Spremam..." : "Spremi promjene")
+                </MudButton>
+                <MudButton Variant="Variant.Text" Href="/housing-units" Disabled="isSaving">
+                    Odustani
+                </MudButton>
+            </MudStack>
+        </MudStack>
+    </EditForm>
+}
+
+@code
 {
     [Parameter] public int Id { get; set; }
 
-    private MudForm? form;
     private SaveHousingUnitDto model = new();
     private DateTime? lastCleanedAt;
 
+    private bool isLoading = true;
+    private bool isSaving;
+    private bool notFound;
+    private string? errorMessage;
+
     protected override async Task OnInitializedAsync()
     {
-        var housingUnit = await Http.GetFromJsonAsync<HousingUnitDto>($"api/housingUnits/{Id}");
+        isLoading = true;
+        errorMessage = null;
 
-        if (housingUnit is not null)
+        try
         {
+            var housingUnit = await Http.GetFromJsonAsync<HousingUnitDto>($"api/housingUnits/{Id}");
+
+            if (housingUnit is null)
+            {
+                notFound = true;
+                return;
+            }
+
             model = new SaveHousingUnitDto
                 {
                     Name = housingUnit.Name,
@@ -57,27 +105,42 @@
 
             lastCleanedAt = housingUnit.LastCleanedAt;
         }
+        catch (Exception ex)
+        {
+            errorMessage = $"Podatke nije moguće učitati: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task UpdateHousingUnit()
     {
-        if (form is not null)
-        {
-            await form.ValidateAsync();
+        isSaving = true;
+        errorMessage = null;
 
-            if(!form.IsValid)
+        try
+        {
+            model.LastCleanedAt = lastCleanedAt;
+
+            var response = await Http.PutAsJsonAsync($"api/housingUnits/{Id}", model);
+
+            if(response.IsSuccessStatusCode)
             {
+                Navigation.NavigateTo("/housing-units");
                 return;
             }
+
+            errorMessage = $"Spremanje nije uspjelo. Status: {(int)response.StatusCode}";
         }
-
-        model.LastCleanedAt = lastCleanedAt;
-
-        var response = await Http.PutAsJsonAsync($"api/housingUnits/{Id}", model);
-
-        if(response.IsSuccessStatusCode)
+        catch (Exception ex)
         {
-            Navigation.NavigateTo("/housing-units");
+            errorMessage = $"Greška kod spremanja: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
         }
     }
 }

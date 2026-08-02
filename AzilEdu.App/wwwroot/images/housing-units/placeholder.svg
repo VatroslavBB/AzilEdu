@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-label="Nema slike">
+  <rect width="640" height="480" fill="#e8eaed"/>
+  <g fill="none" stroke="#9aa0a6" stroke-width="18" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M180 250l140-104 140 104"/>
+    <path d="M212 236v118h216V236"/>
+    <path d="M292 354v-62h56v62"/>
+  </g>
+  <text x="320" y="418" font-family="Segoe UI, Arial, sans-serif" font-size="30" fill="#80868b" text-anchor="middle">Nema slike</text>
+</svg>

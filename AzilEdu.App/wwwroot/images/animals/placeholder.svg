@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-label="Nema slike">
+  <rect width="640" height="480" fill="#e8eaed"/>
+  <g fill="#9aa0a6" transform="translate(320 215)">
+    <ellipse cx="-56" cy="-34" rx="26" ry="34"/>
+    <ellipse cx="-2" cy="-52" rx="26" ry="36"/>
+    <ellipse cx="52" cy="-34" rx="26" ry="34"/>
+    <ellipse cx="88" cy="24" rx="24" ry="30"/>
+    <path d="M-30 26c22-30 74-30 96 0 14 19 26 34 26 54 0 26-24 42-52 42-16 0-24-6-44-6s-28 6-44 6c-28 0-52-16-52-42 0-20 12-35 26-54z"/>
+  </g>
+  <text x="320" y="410" font-family="Segoe UI, Arial, sans-serif" font-size="30" fill="#80868b" text-anchor="middle">Nema slike</text>
+</svg>

@@ -23,51 +23,57 @@
     </MudAlert>
 }
 
-<MudStack Spacing="2">
-    <MudTextField @bind-Value="model.Name" Label="Ime" Required="true" Immediate="true" />
-    <MudTextField @bind-Value="model.UnitType" Label="Vrsta smještaja" Required="true" Immediate="true" />
-    <MudNumericField @bind-Value="model.Capacity" Label="Kapacitet" Immediate="true" />
-    <MudNumericField @bind-Value="model.Occupied" Label="Zauzeto" Immediate="true" />
-    <MudDatePicker @bind-Date="lastCleanedAt" Label="Zadnje čišćeno" />
-    <MudCheckBox @bind-Value="model.IsActive" Label="Aktivno" />
-    <MudTextField @bind-Value="model.ImageUrl" Label="Url slike" Immediate="true" />
-    <MudTextField @bind-Value="model.Note" Label="Dodatno" Immediate="true" />
+<EditForm Model="model" OnValidSubmit="SaveHousingUnit" FormName="housing-unit-create">
+    <DataAnnotationsValidator />
 
-    <MudButton ButtonType="ButtonType.Button"
-               OnClick="SaveHousingUnit"
-               Variant="Variant.Filled"
-               Color="Color.Primary">
-    Spremi
-    </MudButton>
-</MudStack>
+    <MudStack Spacing="2">
+        <MudTextField @bind-Value="model.Name" Label="Ime" Required="true" Immediate="true"
+                      For="@(() => model.Name)" />
+        <MudTextField @bind-Value="model.UnitType" Label="Vrsta smještaja" Required="true" Immediate="true"
+                      For="@(() => model.UnitType)" />
+        <MudNumericField @bind-Value="model.Capacity" Label="Kapacitet" Immediate="true"
+                         For="@(() => model.Capacity)" />
+        <MudNumericField @bind-Value="model.Occupied" Label="Zauzeto" Immediate="true"
+                         For="@(() => model.Occupied)" />
+        <MudDatePicker @bind-Date="lastCleanedAt" Label="Zadnje čišćeno" />
+        <MudCheckBox @bind-Value="model.IsActive" Label="Aktivno" />
+        <MudTextField @bind-Value="model.ImageUrl" Label="Url slike" Immediate="true"
+                      For="@(() => model.ImageUrl)" />
+        <MudTextField @bind-Value="model.Note" Label="Dodatno" Immediate="true"
+                      For="@(() => model.Note)" />
+
+        <MudButton ButtonType="ButtonType.Submit"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="isSaving">
+            @(isSaving ? "Spremam..." : "Spremi")
+        </MudButton>
+    </MudStack>
+</EditForm>
 
 @code {
     private string? statusMessage;
     private string? errorMessage;
-    private int saveClickCount;
+    private bool isSaving;
 
     private SaveHousingUnitDto model = new()
         {
+            Capacity = 1,
+            IsActive = true,
             LastCleanedAt = DateTime.Today,
-            ImageUrl = "images/housingUnits/placeholder.webp"
+            ImageUrl = "/images/housing-units/placeholder.svg"
         };
 
     private DateTime? lastCleanedAt = DateTime.Today;
 
     private async Task SaveHousingUnit()
     {
+        isSaving = true;
+        statusMessage = null;
+        errorMessage = null;
+
         try
         {
-            saveClickCount++;
-            statusMessage = $"Klik na spremanje je primljen ({saveClickCount}).";
-            errorMessage = null;
-
-            if(string.IsNullOrEmpty(model.Name) || string.IsNullOrWhiteSpace(model.UnitType))
-            {
-                errorMessage = "Upiši obavezna polja: ime i tip jedinice";
-                return;
-            }
-
             model.LastCleanedAt = lastCleanedAt;
 
             var response = await Http.PostAsJsonAsync("api/housingUnits", model);
@@ -83,6 +89,10 @@
         catch (Exception ex)
         {
             errorMessage = $"Greška kod spremanja: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
         }
     }
 }

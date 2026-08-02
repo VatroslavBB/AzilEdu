@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AzilEdu.Api.Controllers;
 
+[Microsoft.AspNetCore.Authorization.Authorize(
+    Policy = AzilEdu.Api.Security.AuthorizationPolicies.AdminOnly)]
 [ApiController]
 [Route("api/[controller]")]
 public class EmployeePositionsController : ControllerBase

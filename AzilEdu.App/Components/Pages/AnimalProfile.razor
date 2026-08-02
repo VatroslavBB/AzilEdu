@@ -5,6 +5,8 @@
 @using Microsoft.AspNetCore.Components.Forms
 @inject HttpClient Http
 @inject CurrentUserService CurrentUser
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
 
 <PageTitle>Profil životinje</PageTitle>
 
@@ -48,6 +50,10 @@ else
 
                 <InputFile OnChange="HandleFileSelected"
                            accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" />
+
+                <MudText Typo="Typo.caption" Class="d-block mt-2">
+                    Dopušteni formati: JPG, PNG, WEBP, MP4 i WEBM. Najveća veličina datoteke: @MaxFileSizeText.
+                </MudText>
 
                 @if (selectedFile is not null)
                 {
@@ -122,7 +128,7 @@ else
                                     }
 
                                     <MudButton Color="Color.Error"
-                                               OnClick="@(() => DeleteMedia(media.Id))">
+                                               OnClick="@(() => DeleteMedia(media))">
                                         Izbriši
                                     </MudButton>
                                 </MudCardActions>
@@ -153,11 +159,13 @@ else
     private bool CanManageMedia =>
         CurrentUser.HasAnyRole("Admin", "Employee");
 
+    private string MaxFileSizeText => FormatBytes(MaxFileSize);
+
     private string ProfileImageUrl =>
         mediaItems.FirstOrDefault(item =>
             item.IsCover && item.MediaType == "Image")?.Url
         ?? animal?.ImageUrl
-        ?? "/images/animals/placeholder.webp";
+        ?? "/images/animals/placeholder.svg";
 
     protected override async Task OnParametersSetAsync()
     {
@@ -248,13 +256,42 @@ else
             await LoadMedia();
     }
 
-    private async Task DeleteMedia(int mediaId)
+    private async Task DeleteMedia(AnimalMediaDto media)
     {
-        var response = await Http.DeleteAsync(
-            $"api/animals/{Id}/media/{mediaId}");
+        var name = media.Caption ?? media.OriginalFileName;
 
-        if (response.IsSuccessStatusCode)
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            title: "Brisanje datoteke",
+            message: $"Datoteka \"{name}\" bit će trajno obrisana s profila. Želiš li nastaviti?",
+            yesText: "Obriši",
+            cancelText: "Odustani");
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        errorMessage = null;
+
+        try
+        {
+            var response = await Http.DeleteAsync(
+                $"api/animals/{Id}/media/{media.Id}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                errorMessage = "Datoteku nije moguće obrisati.";
+                return;
+            }
+
             await LoadMedia();
+
+            Snackbar.Add("Datoteka je obrisana.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Greška kod brisanja datoteke: {ex.Message}";
+        }
     }
 
     private static string FormatBytes(long bytes)

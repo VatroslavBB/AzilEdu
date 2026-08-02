@@ -69,12 +69,25 @@ namespace AzilEdu.Api.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            // SQLite ignorira PRAGMA foreign_keys unutar transakcije, a EF svoju verziju
+            // šalje baš unutar nje. Zato ga puštamo izvan transakcije, inače
+            // DROP TABLE "AnimalStatuses" pukne na FK constraintu.
+            migrationBuilder.Sql("PRAGMA foreign_keys = OFF;", suppressTransaction: true);
+
+            migrationBuilder.AddColumn<bool>(
+                name: "IsAdopted",
+                table: "Animals",
+                type: "INTEGER",
+                nullable: false,
+                defaultValue: false);
+
+            // Tko je imao status "Udomljena" (Id = 3), vraća se na IsAdopted = true.
+            migrationBuilder.Sql(
+                "UPDATE \"Animals\" SET \"IsAdopted\" = 1 WHERE \"AnimalStatusId\" = 3;");
+
             migrationBuilder.DropForeignKey(
                 name: "FK_Animals_AnimalStatuses_AnimalStatusId",
                 table: "Animals");
-
-            migrationBuilder.DropTable(
-                name: "AnimalStatuses");
 
             migrationBuilder.DropIndex(
                 name: "IX_Animals_AnimalStatusId",
@@ -84,12 +97,10 @@ namespace AzilEdu.Api.Migrations
                 name: "AnimalStatusId",
                 table: "Animals");
 
-            migrationBuilder.AddColumn<bool>(
-                name: "IsAdopted",
-                table: "Animals",
-                type: "INTEGER",
-                nullable: false,
-                defaultValue: false);
+            migrationBuilder.DropTable(
+                name: "AnimalStatuses");
+
+            migrationBuilder.Sql("PRAGMA foreign_keys = ON;", suppressTransaction: true);
         }
     }
 }

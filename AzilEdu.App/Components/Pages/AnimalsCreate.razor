@@ -24,79 +24,85 @@
     </MudAlert>
 }
 
-<MudStack Spacing="2">
-    <MudTextField @bind-Value="model.Name" Label="Ime" Required="true" Immediate="true" />
-    <MudTextField @bind-Value="model.Species" Label="Vrsta" Required="true" Immediate="true" />
-    <MudTextField @bind-Value="model.Breed" Label="Pasmina" Immediate="true" />
-    <MudTextField @bind-Value="model.Gender" Label="Spol" Immediate="true" />
-    <MudNumericField @bind-Value="model.Age" Label="Dob" />
-    <MudDatePicker @bind-Date="arrivalDate" Label="Datum dolaska" />
-    <MudSelect T="int"
-               Label="Status"
-               @bind-Value="model.AnimalStatusId"
-               Variant="Variant.Outlined"
-               Required="true">
-        @foreach (var status in statusList)
-        {
-            <MudSelectItem Value="@status.Id">@status.Name</MudSelectItem>
-        }
-    </MudSelect>
-    <MudTextField @bind-Value="model.ImageUrl" Label="Putanja slike" Immediate="true" />
-    <MudTextField @bind-Value="model.Description" Label="Opis" Lines="3" Immediate="true" />
+<EditForm Model="model" OnValidSubmit="SaveAnimal" FormName="animal-create">
+    <DataAnnotationsValidator />
 
-    <MudButton ButtonType="ButtonType.Button"
-               OnClick="SaveAnimal"
-               Variant="Variant.Filled"
-               Color="Color.Primary">
-        Spremi
-    </MudButton>
-</MudStack>
+    <MudStack Spacing="2">
+        <MudTextField @bind-Value="model.Name" Label="Ime" Required="true" Immediate="true"
+                      For="@(() => model.Name)" />
+        <MudTextField @bind-Value="model.Species" Label="Vrsta" Required="true" Immediate="true"
+                      For="@(() => model.Species)" />
+        <MudTextField @bind-Value="model.Breed" Label="Pasmina" Immediate="true"
+                      For="@(() => model.Breed)" />
+        <MudTextField @bind-Value="model.Gender" Label="Spol" Immediate="true"
+                      For="@(() => model.Gender)" />
+        <MudNumericField @bind-Value="model.Age" Label="Dob" For="@(() => model.Age)" />
+        <MudDatePicker @bind-Date="arrivalDate" Label="Datum dolaska" />
+        <MudSelect T="int"
+                   Label="Status"
+                   @bind-Value="model.AnimalStatusId"
+                   Variant="Variant.Outlined"
+                   Required="true"
+                   For="@(() => model.AnimalStatusId)">
+            @foreach (var status in statusList)
+            {
+                <MudSelectItem Value="@status.Id">@status.Name</MudSelectItem>
+            }
+        </MudSelect>
+        <MudTextField @bind-Value="model.ImageUrl" Label="Putanja slike" Immediate="true"
+                      For="@(() => model.ImageUrl)" />
+        <MudTextField @bind-Value="model.Description" Label="Opis" Lines="3" Immediate="true"
+                      For="@(() => model.Description)" />
+
+        <MudButton ButtonType="ButtonType.Submit"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="isSaving">
+            @(isSaving ? "Spremam..." : "Spremi")
+        </MudButton>
+    </MudStack>
+</EditForm>
 
 @code {
     private string? statusMessage;
     private string? errorMessage;
-    private int saveClickCount;
+    private bool isSaving;
 
     private List<LookupDto> statusList = new();
 
     private SaveAnimalDto model = new()
     {
         ArrivalDate = DateTime.Today,
-        ImageUrl = "/images/animals/placeholder.webp"
+        ImageUrl = "/images/animals/placeholder.svg"
     };
 
     private DateTime? arrivalDate = DateTime.Today;
 
     protected override async Task OnInitializedAsync()
     {
-        statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/animalstatuses") ?? new();
-
-        if (model.AnimalStatusId == 0 && statusList.Count > 0)
+        try
         {
-            model.AnimalStatusId = statusList[0].Id;
+            statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/animalstatuses") ?? new();
+
+            if (model.AnimalStatusId == 0 && statusList.Count > 0)
+            {
+                model.AnimalStatusId = statusList[0].Id;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Statuse nije moguće učitati: {ex.Message}";
         }
     }
 
     private async Task SaveAnimal()
     {
+        isSaving = true;
+        statusMessage = null;
+        errorMessage = null;
+
         try
         {
-            saveClickCount++;
-            statusMessage = $"Klik na spremanje je primljen ({saveClickCount}).";
-            errorMessage = null;
-
-            if (string.IsNullOrWhiteSpace(model.Name) || string.IsNullOrWhiteSpace(model.Species))
-            {
-                errorMessage = "Upiši barem obavezna polja: ime i vrstu.";
-                return;
-            }
-
-            if (model.AnimalStatusId == 0)
-            {
-                errorMessage = "Odaberi status životinje.";
-                return;
-            }
-
             model.ArrivalDate = arrivalDate;
 
             var response = await Http.PostAsJsonAsync("api/animals", model);
@@ -112,6 +118,10 @@
         catch (Exception ex)
         {
             errorMessage = $"Greška kod spremanja: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
         }
     }
 }

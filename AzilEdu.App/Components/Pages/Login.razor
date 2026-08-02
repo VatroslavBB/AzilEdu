@@ -65,19 +65,20 @@
 
             if (!response.IsSuccessStatusCode)
             {
-                errorMessage = "Prijava nije uspjela. Provjeri email i lozinku.";
+                errorMessage = "Pogrešan email ili lozinka.";
                 return;
             }
 
-            var user = await response.Content.ReadFromJsonAsync<LoggedUserDto>();
+            var login = await response.Content
+                .ReadFromJsonAsync<LoginResponseDto>();
 
-            if (user is null)
+            if (login is null)
             {
                 errorMessage = "API nije vratio podatke o korisniku.";
                 return;
             }
 
-            CurrentUser.Login(user);
+            await CurrentUser.LoginAsync(login);
             Navigation.NavigateTo("/");
         }
         finally

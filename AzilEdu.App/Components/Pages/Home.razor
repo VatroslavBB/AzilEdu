@@ -340,25 +340,20 @@ else
         }
     }
 
-    // Vlastiti podaci se i dalje dohvacaju API filterima, ne filtriranjem svih zapisa.
     private async Task LoadMyDataAsync()
     {
-        var volunteerId = CurrentUser.User?.VolunteerId;
-
-        if (CurrentUser.HasRole("Volunteer") && volunteerId is not null)
+        if (CurrentUser.HasRole("Volunteer") && CurrentUser.User?.VolunteerId is not null)
         {
             var myTasks = await Http.GetFromJsonAsync<List<VolunteerTaskDto>>(
-                $"api/volunteertasks?volunteerId={volunteerId}") ?? new();
+                "api/volunteertasks/mine") ?? new();
 
             myUnfinishedTasks = myTasks.Count(task => task.Status != "Završeno");
         }
 
-        var donorId = CurrentUser.User?.DonorId;
-
-        if (CurrentUser.HasRole("Donor") && donorId is not null)
+        if (CurrentUser.HasRole("Donor") && CurrentUser.User?.DonorId is not null)
         {
             var myDonations = await Http.GetFromJsonAsync<List<DonationDto>>(
-                $"api/donations?donorId={donorId}") ?? new();
+                "api/donations/mine") ?? new();
 
             myDonationsCount = myDonations.Count;
         }

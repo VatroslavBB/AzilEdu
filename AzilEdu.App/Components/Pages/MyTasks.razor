@@ -134,7 +134,7 @@ else
             }
 
             tasks = await Http.GetFromJsonAsync<List<VolunteerTaskDto>>(
-                $"api/volunteertasks?volunteerId={volunteerId}") ?? new();
+                        "api/volunteertasks/mine") ?? new();
         }
         catch (HttpRequestException ex)
         {

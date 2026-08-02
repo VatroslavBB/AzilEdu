@@ -10,53 +10,101 @@
     Na ovoj stranici dohvaćamo postojeći zapis i spremamo promjene preko PUT zahtjeva.
 </MudText>
 
-<MudForm @ref="form">
-    <MudStack Spacing="2">
-        <MudTextField @bind-Value="model.Name" Label="Ime" Required="true" />
-        <MudTextField @bind-Value="model.Species" Label="Vrsta" Required="true" />
-        <MudTextField @bind-Value="model.Breed" Label="Pasmina" />
-        <MudTextField @bind-Value="model.Gender" Label="Spol" />
-        <MudNumericField @bind-Value="model.Age" Label="Dob" />
-        <MudDatePicker @bind-Date="arrivalDate" Label="Datum dolaska" />
-        <MudSelect T="int"
-                   Label="Status"
-                   @bind-Value="model.AnimalStatusId"
-                   Variant="Variant.Outlined"
-                   Required="true">
-            @foreach (var status in statusList)
-            {
-                <MudSelectItem Value="@status.Id">@status.Name</MudSelectItem>
-            }
-        </MudSelect>
-        <MudTextField @bind-Value="model.ImageUrl" Label="Putanja slike" />
-        <MudTextField @bind-Value="model.Description" Label="Opis" Lines="3" />
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">
+        @errorMessage
+    </MudAlert>
+}
 
-        <MudButton ButtonType="ButtonType.Button"
-                   OnClick="@UpdateAnimal"
-                   Variant="Variant.Filled"
-                   Color="Color.Primary">
-            Spremi promjene
-        </MudButton>
-    </MudStack>
-</MudForm>
+@if (isLoading)
+{
+    <MudPaper Class="pa-8 d-flex justify-center" Elevation="0">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </MudPaper>
+}
+else if (notFound)
+{
+    <MudAlert Severity="Severity.Warning">
+        Tražena životinja nije pronađena.
+    </MudAlert>
+}
+else
+{
+    <EditForm Model="model" OnValidSubmit="UpdateAnimal" FormName="animal-edit">
+        <DataAnnotationsValidator />
+
+        <MudStack Spacing="2">
+            <MudTextField @bind-Value="model.Name" Label="Ime" Required="true"
+                          For="@(() => model.Name)" />
+            <MudTextField @bind-Value="model.Species" Label="Vrsta" Required="true"
+                          For="@(() => model.Species)" />
+            <MudTextField @bind-Value="model.Breed" Label="Pasmina"
+                          For="@(() => model.Breed)" />
+            <MudTextField @bind-Value="model.Gender" Label="Spol"
+                          For="@(() => model.Gender)" />
+            <MudNumericField @bind-Value="model.Age" Label="Dob" For="@(() => model.Age)" />
+            <MudDatePicker @bind-Date="arrivalDate" Label="Datum dolaska" />
+            <MudSelect T="int"
+                       Label="Status"
+                       @bind-Value="model.AnimalStatusId"
+                       Variant="Variant.Outlined"
+                       Required="true"
+                       For="@(() => model.AnimalStatusId)">
+                @foreach (var status in statusList)
+                {
+                    <MudSelectItem Value="@status.Id">@status.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField @bind-Value="model.ImageUrl" Label="Putanja slike"
+                          For="@(() => model.ImageUrl)" />
+            <MudTextField @bind-Value="model.Description" Label="Opis" Lines="3"
+                          For="@(() => model.Description)" />
+
+            <MudStack Row="true">
+                <MudButton ButtonType="ButtonType.Submit"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Disabled="isSaving">
+                    @(isSaving ? "Spremam..." : "Spremi promjene")
+                </MudButton>
+                <MudButton Variant="Variant.Text" Href="/animals" Disabled="isSaving">
+                    Odustani
+                </MudButton>
+            </MudStack>
+        </MudStack>
+    </EditForm>
+}
 
 @code {
     [Parameter] public int Id { get; set; }
 
-    private MudForm? form;
     private SaveAnimalDto model = new();
     private DateTime? arrivalDate;
-
     private List<LookupDto> statusList = new();
+
+    private bool isLoading = true;
+    private bool isSaving;
+    private bool notFound;
+    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/animalstatuses") ?? new();
+        isLoading = true;
+        errorMessage = null;
 
-        var animal = await Http.GetFromJsonAsync<AnimalDto>($"api/animals/{Id}");
-
-        if (animal is not null)
+        try
         {
+            statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/animalstatuses") ?? new();
+
+            var animal = await Http.GetFromJsonAsync<AnimalDto>($"api/animals/{Id}");
+
+            if (animal is null)
+            {
+                notFound = true;
+                return;
+            }
+
             model = new SaveAnimalDto
             {
                 Name = animal.Name,
@@ -71,33 +119,48 @@
             };
 
             arrivalDate = animal.ArrivalDate;
-        }
 
-        if (model.AnimalStatusId == 0 && statusList.Count > 0)
+            if (model.AnimalStatusId == 0 && statusList.Count > 0)
+            {
+                model.AnimalStatusId = statusList[0].Id;
+            }
+        }
+        catch (Exception ex)
         {
-            model.AnimalStatusId = statusList[0].Id;
+            errorMessage = $"Podatke nije moguće učitati: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 
     private async Task UpdateAnimal()
     {
-        if (form is not null)
-        {
-            await form.ValidateAsync();
+        isSaving = true;
+        errorMessage = null;
 
-            if (!form.IsValid)
+        try
+        {
+            model.ArrivalDate = arrivalDate;
+
+            var response = await Http.PutAsJsonAsync($"api/animals/{Id}", model);
+
+            if (response.IsSuccessStatusCode)
             {
+                Navigation.NavigateTo("/animals");
                 return;
             }
+
+            errorMessage = $"Spremanje nije uspjelo. Status: {(int)response.StatusCode}";
         }
-
-        model.ArrivalDate = arrivalDate;
-
-        var response = await Http.PutAsJsonAsync($"api/animals/{Id}", model);
-
-        if (response.IsSuccessStatusCode)
+        catch (Exception ex)
         {
-            Navigation.NavigateTo("/animals");
+            errorMessage = $"Greška kod spremanja: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
         }
     }
 }

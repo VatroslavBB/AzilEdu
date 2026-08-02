@@ -3,6 +3,8 @@
 @using AzilEdu.Shared.DTOs
 @using System.Net.Http.Json
 @inject HttpClient Http
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
 
 <PageTitle>Smještajne jedinice</PageTitle>
 
@@ -11,6 +13,13 @@
     Ovdje se prikazuje pregled boksova, soba i drugih prostora u kojima se životinje
     trenutačno nalaze u azilu, zajedno s popunjenošću i statusom svake jedinice.
 </MudText>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">
+        @errorMessage
+    </MudAlert>
+}
 
 <MudGrid Class="mb-4">
     <MudItem xs="12" sm="3">
@@ -50,6 +59,14 @@
     Novi smještaj
 </MudButton>
 
+@if (isLoading)
+{
+    <MudPaper Class="pa-8 d-flex justify-center" Elevation="0">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </MudPaper>
+}
+else
+{
 <MudTable Items="@FilteredHousingUnits" Hover="true" Striped="true" Bordered="true" Dense="true">
     <HeaderContent>
         <MudTh>Slika</MudTh>
@@ -65,7 +82,7 @@
     <RowTemplate>
         <MudTd DataLabel="Slika">
             <MudAvatar Size="Size.Large">
-                <MudImage Src="@context.ImageUrl" Alt="@context.Name" />
+                <MudImage Src="@GetImageUrl(context)" Alt="@context.Name" />
             </MudAvatar>
         </MudTd>
         <MudTd DataLabel="Naziv">@context.Name</MudTd>
@@ -85,23 +102,47 @@
             <MudButton Variant="Variant.Text" Color="Color.Primary" Href="@($"/housingUnits/edit/{context.Id}")">
                 Uredi
             </MudButton>
-            <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="@(() => DeleteHousingUnit(context.Id))">
+            <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="@(() => DeleteHousingUnit(context))">
                 Obriši
             </MudButton>
         </MudTd>
     </RowTemplate>
+    <NoRecordsContent>
+        <MudText Typo="Typo.body1" Class="pa-4">
+            @(housingUnits.Count == 0
+                ? "Još nema unesenih smještajnih jedinica."
+                : "Nema jedinica za odabrani filter.")
+        </MudText>
+    </NoRecordsContent>
 </MudTable>
+}
 
 @code {
     protected override async Task OnInitializedAsync()
     {
-        List<HousingUnitDto>? result = await Http.GetFromJsonAsync<List<HousingUnitDto>>("api/housingunits");
-        housingUnits = result ?? new List<HousingUnitDto>();
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var result = await Http.GetFromJsonAsync<List<HousingUnitDto>>("api/housingunits");
+            housingUnits = result ?? new List<HousingUnitDto>();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Smještajne jedinice nije moguće učitati: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private string selectedHousingFilter = "Sve";
 
     private List<HousingUnitDto> housingUnits = new();
+    private bool isLoading = true;
+    private string? errorMessage;
 
     private int TotalUnits => housingUnits.Count;
 
@@ -138,6 +179,13 @@
     private void ShowFreeUnits()
     {
         selectedHousingFilter = "Slobodno";
+    }
+
+    private static string GetImageUrl(HousingUnitDto unit)
+    {
+        return string.IsNullOrWhiteSpace(unit.ImageUrl)
+            ? "/images/housing-units/placeholder.svg"
+            : unit.ImageUrl;
     }
 
     private bool IsFull(HousingUnitDto unit)
@@ -190,13 +238,38 @@
         return Color.Success;
     }
 
-    private async Task DeleteHousingUnit(int id)
+    private async Task DeleteHousingUnit(HousingUnitDto unit)
     {
-        var response = await Http.DeleteAsync($"api/housingUnits/{id}");
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            title: "Brisanje smještajne jedinice",
+            message: $"Smještajna jedinica \"{unit.Name}\" bit će trajno obrisana. Želiš li nastaviti?",
+            yesText: "Obriši",
+            cancelText: "Odustani");
 
-        if (response.IsSuccessStatusCode)
+        if (confirmed != true)
         {
-            housingUnits = housingUnits.Where(h => h.Id != id).ToList();
+            return;
+        }
+
+        errorMessage = null;
+
+        try
+        {
+            var response = await Http.DeleteAsync($"api/housingUnits/{unit.Id}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                errorMessage = "Smještajnu jedinicu nije moguće obrisati.";
+                return;
+            }
+
+            housingUnits = housingUnits.Where(h => h.Id != unit.Id).ToList();
+
+            Snackbar.Add("Smještajna jedinica je obrisana.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Greška kod brisanja smještajne jedinice: {ex.Message}";
         }
     }
 }

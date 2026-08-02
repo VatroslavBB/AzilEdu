@@ -1,8 +1,12 @@
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using AzilEdu.App.Components;
 using AzilEdu.App.Services;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddScoped<CurrentUserService>();
+builder.Services.AddScoped<ProtectedLocalStorage>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents(options =>
